@@ -1,0 +1,2 @@
+app-sidebar.tsx:31 Uncaught ReferenceError: dashboard is not defined
+    at AppSidebar (app-sidebar.tsx:31:41)

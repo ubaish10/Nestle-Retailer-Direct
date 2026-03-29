@@ -1,0 +1,467 @@
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
+import { Search, Filter, ChevronDown, Package, AlertTriangle, TrendingUp, TrendingDown, Eye, EyeOff, ChevronLeft, HelpCircle, LayoutDashboard, Settings, Edit2, Save, X, User } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+
+interface Product {
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+    image: string;
+    stock_status: 'in_stock' | 'low_stock' | 'out_of_stock';
+    stock_quantity: number;
+}
+
+interface Props {
+    products: Product[];
+    categories: string[];
+}
+
+function getStockStatus(status: string, quantity: number): 'in_stock' | 'low_stock' | 'out_of_stock' {
+    if (quantity === 0) return 'out_of_stock';
+    if (quantity <= 20) return 'low_stock';
+    return 'in_stock';
+}
+
+function getStockStatusBadge(status: string): string {
+    switch (status) {
+        case 'in_stock':
+            return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
+        case 'low_stock':
+            return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
+        case 'out_of_stock':
+            return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+        default:
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
+}
+
+function getStockStatusLabel(status: string): string {
+    switch (status) {
+        case 'in_stock':
+            return 'In Stock';
+        case 'low_stock':
+            return 'Low Stock';
+        case 'out_of_stock':
+            return 'Out of Stock';
+        default:
+            return status;
+    }
+}
+
+export default function Stock({ products, categories }: Props) {
+    const { toast } = useToast();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortBy, setSortBy] = useState<string>('name');
+    const [stockFilter, setStockFilter] = useState<string>('all');
+    const [showOutOfStock, setShowOutOfStock] = useState(true);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [editQuantity, setEditQuantity] = useState<number>(0);
+
+    // Update stock status based on quantity (>20 in stock, <=20 low stock, =0 out of stock)
+    const productsWithUpdatedStatus = products.map(product => ({
+        ...product,
+        stock_status: getStockStatus(product.stock_status, product.stock_quantity)
+    }));
+
+    const filteredProducts = productsWithUpdatedStatus
+        .filter((product) => {
+            const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product.description.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesStockFilter = stockFilter === 'all' || product.stock_status === stockFilter;
+            const shouldShowOutOfStock = showOutOfStock || product.stock_status !== 'out_of_stock';
+            return matchesSearch && matchesStockFilter && shouldShowOutOfStock;
+        })
+        .sort((a, b) => {
+            switch (sortBy) {
+                case 'name':
+                    return a.name.localeCompare(b.name);
+                case 'price_low':
+                    return a.price - b.price;
+                case 'price_high':
+                    return b.price - a.price;
+                case 'stock_low':
+                    return a.stock_quantity - b.stock_quantity;
+                case 'stock_high':
+                    return b.stock_quantity - a.stock_quantity;
+                default:
+                    return 0;
+            }
+        });
+
+    const handleEditClick = (product: Product) => {
+        setEditingProduct(product);
+        setEditQuantity(product.stock_quantity);
+    };
+
+    const handleSaveQuantity = () => {
+        if (editingProduct) {
+            router.put(`/stock/${editingProduct.id}`, {
+                stock_quantity: editQuantity
+            }, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast({
+                        title: 'Stock updated!',
+                        description: `${editingProduct.name} quantity updated to ${editQuantity} units.`,
+                    });
+                    setEditingProduct(null);
+                },
+                onError: () => {
+                    toast({
+                        title: 'Failed to update',
+                        description: 'There was an error updating the stock quantity.',
+                        variant: 'destructive',
+                    });
+                }
+            });
+        }
+    };
+
+    const stats = {
+        total_products: products.length,
+        in_stock: products.filter(p => getStockStatus(p.stock_status, p.stock_quantity) === 'in_stock').length,
+        low_stock: products.filter(p => getStockStatus(p.stock_status, p.stock_quantity) === 'low_stock').length,
+        out_of_stock: products.filter(p => getStockStatus(p.stock_status, p.stock_quantity) === 'out_of_stock').length,
+    };
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-[#f5f7fa] to-[#e8ecf1]">
+            <Head title="Inventory" />
+
+            {/* SKILL.md Designed Header */}
+            <header className="sticky top-0 z-50">
+                {/* Deep navy gradient base */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#00447C] via-[#003d6f] to-[#00284a]"></div>
+
+                {/* Subtle noise texture */}
+                <div className="absolute inset-0 opacity-[0.02]" style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
+                }}></div>
+
+                {/* Animated glow orbs */}
+                <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute top-0 left-1/4 w-32 h-32 bg-blue-400/10 rounded-full blur-2xl"></div>
+                    <div className="absolute top-0 right-1/4 w-24 h-24 bg-cyan-400/10 rounded-full blur-2xl"></div>
+                </div>
+
+                {/* Content */}
+                <div className="relative container flex h-16 items-center justify-between px-4">
+                    {/* Back button */}
+                    <Link href="/" className="group flex items-center gap-2">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-white/20 rounded-lg blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <ChevronLeft className="relative h-6 w-6 text-white group-hover:scale-110 transition-transform duration-300" />
+                        </div>
+                    </Link>
+
+                    {/* Title */}
+                    <h1 className="text-base md:text-lg font-bold text-white tracking-widest uppercase">Inventory</h1>
+
+                    {/* Help button */}
+                    <button className="group">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-white/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <HelpCircle className="relative h-6 w-6 text-white/80 group-hover:text-white group-hover:scale-110 transition-all duration-300" />
+                        </div>
+                    </button>
+                </div>
+            </header>
+
+            {/* Main Content */}
+            <main className="container md:py-6 pb-56 px-3 md:px-4">
+                <div className="flex flex-col gap-6">
+
+                    {/* Results Count */}
+                    <div className="flex items-center justify-between">
+                        <p className="text-xs md:text-sm text-muted-foreground">
+                            Showing {filteredProducts.length} of {products.length} products
+                        </p>
+                    </div>
+
+                    {/* Products Table */}
+                    {filteredProducts.length === 0 ? (
+                        <Card className="border-0 shadow-lg">
+                            <CardContent className="flex flex-col items-center justify-center py-12 text-center px-4">
+                                <Package className="h-12 w-12 text-muted-foreground mb-4" />
+                                <h3 className="text-lg font-semibold">No products found</h3>
+                                <p className="text-muted-foreground">Try adjusting your search or filter criteria</p>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <>
+                            {/* Desktop Table View */}
+                            <Card className="border-0 shadow-lg overflow-hidden max-w-8xl mx-auto hidden md:block">
+                                <table className="w-full">
+                                    <thead className="bg-muted/50">
+                                        <tr>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                                Product
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                                Price
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                                Stock Level
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                                Quantity
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                                Status
+                                            </th>
+                                            <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border">
+                                        {filteredProducts.map((product) => (
+                                            <tr key={product.id} className="hover:bg-muted/30 transition-colors">
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-gray-100 to-gray-50 border border-border overflow-hidden flex-shrink-0">
+                                                            <img
+                                                                src={product.image}
+                                                                alt={product.name}
+                                                                className="h-full w-full object-cover"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-medium text-sm">{product.name}</div>
+                                                            <div className="text-xs text-muted-foreground line-clamp-1 max-w-[180px]">
+                                                                {product.description}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-sm font-semibold text-[#00447C]">
+                                                    LKR {product.price.toFixed(2)}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden max-w-[80px]">
+                                                            <div
+                                                                className={`h-full rounded-full ${
+                                                                    product.stock_status === 'in_stock'
+                                                                        ? 'bg-emerald-500'
+                                                                        : product.stock_status === 'low_stock'
+                                                                        ? 'bg-amber-500'
+                                                                        : 'bg-red-500'
+                                                                }`}
+                                                                style={{
+                                                                    width: `${Math.min(100, (product.stock_quantity / 100) * 100)}%`
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-sm font-medium">
+                                                    {product.stock_quantity} units
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <Badge className={getStockStatusBadge(product.stock_status)}>
+                                                        {getStockStatusLabel(product.stock_status)}
+                                                    </Badge>
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleEditClick(product)}
+                                                    >
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </Card>
+
+                            {/* Mobile Card View */}
+                            <div className="grid gap-3 md:hidden">
+                                {filteredProducts.map((product) => (
+                                    <Card key={product.id} className="border-0 shadow-md overflow-hidden">
+                                        <CardContent className="p-3">
+                                            <div className="flex items-start gap-3">
+                                                <div className="h-16 w-16 rounded-lg bg-gradient-to-br from-gray-100 to-gray-50 border border-border overflow-hidden flex-shrink-0">
+                                                    <img
+                                                        src={product.image}
+                                                        alt={product.name}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-semibold text-sm truncate">{product.name}</div>
+                                                    <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                                                        {product.description}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <Badge className={`${getStockStatusBadge(product.stock_status)} text-[10px] px-1.5 py-0`}>
+                                                            {getStockStatusLabel(product.stock_status)}
+                                                        </Badge>
+                                                        <span className="text-xs font-semibold text-[#00447C]">LKR {product.price.toFixed(2)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+                                                        <div
+                                                            className={`h-full rounded-full ${
+                                                                product.stock_status === 'in_stock'
+                                                                    ? 'bg-emerald-500'
+                                                                    : product.stock_status === 'low_stock'
+                                                                    ? 'bg-amber-500'
+                                                                    : 'bg-red-500'
+                                                            }`}
+                                                            style={{
+                                                                width: `${Math.min(100, (product.stock_quantity / 100) * 100)}%`
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-xs text-muted-foreground">{product.stock_quantity} units</span>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-8 px-2"
+                                                    onClick={() => handleEditClick(product)}
+                                                >
+                                                    <Edit2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Edit Quantity Dialog */}
+                    <Dialog open={!!editingProduct} onOpenChange={() => setEditingProduct(null)}>
+                        <DialogContent className="sm:max-w-[425px] max-w-[90vw] w-full p-4">
+                            <DialogHeader>
+                                <DialogTitle className="text-base md:text-lg">Edit Stock Quantity</DialogTitle>
+                                <DialogDescription className="text-xs md:text-sm">
+                                    Update the stock quantity for {editingProduct?.name}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="quantity" className="text-xs md:text-sm">Quantity</Label>
+                                    <Input
+                                        id="quantity"
+                                        type="number"
+                                        min="0"
+                                        value={editQuantity}
+                                        onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
+                                        className="w-full text-sm"
+                                    />
+                                </div>
+                                <div className="text-xs md:text-sm text-muted-foreground space-y-2">
+                                    <p>Current status: <Badge className={getStockStatusBadge(editingProduct?.stock_status || 'in_stock')}>{getStockStatusLabel(editingProduct?.stock_status || 'in_stock')}</Badge></p>
+                                    <p>New status: <Badge className={getStockStatusBadge(getStockStatus('', editQuantity))}>{getStockStatusLabel(getStockStatus('', editQuantity))}</Badge></p>
+                                </div>
+                            </div>
+                            <DialogFooter className="gap-2 sm:gap-0">
+                                <Button variant="outline" onClick={() => setEditingProduct(null)} className="w-full sm:w-auto">
+                                    <X className="h-3 w-3 md:h-4 md:w-4 mr-2" />
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleSaveQuantity} className="w-full sm:w-auto">
+                                    <Save className="h-3 w-3 md:h-4 md:w-4 mr-2" />
+                                    Save Changes
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            </main>
+
+            {/* Spacer to prevent content going under footer */}
+            <div className="h-20"></div>
+
+            {/* SKILL.md Designed Footer */}
+            <footer className="fixed bottom-0 left-0 right-0 z-50">
+                {/* Deep navy gradient base */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#00447C] via-[#003d6f] to-[#00284a]"></div>
+
+                {/* Subtle noise texture */}
+                <div className="absolute inset-0 opacity-[0.02]" style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
+                }}></div>
+
+                {/* Animated glow */}
+                <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl animate-pulse"></div>
+                </div>
+
+                {/* Top accent line */}
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+
+                {/* Content */}
+                <div className="relative container px-4 py-4">
+                    <div className="flex justify-center">
+                        <div className="grid grid-cols-4 gap-2 md:gap-4">
+                            {navLinks.map((link) => {
+                                const Icon = link.icon;
+                                return (
+                                    <Link
+                                        key={link.name}
+                                        href={link.href}
+                                        className="group relative flex flex-col items-center gap-1.5 p-2"
+                                    >
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/40 to-cyan-400/40 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                            <Icon className="relative h-5 w-5 text-white/60 group-hover:text-white transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-0.5" />
+                                        </div>
+                                        <span className="text-[10px] text-white/50 font-medium tracking-wider uppercase group-hover:text-white/80 transition-colors duration-500">
+                                            {link.name}
+                                        </span>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Decorative pulse dot */}
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                        <div className="relative w-1.5 h-1.5">
+                            <div className="absolute inset-0 w-1.5 h-1.5 rounded-full bg-blue-400/40 animate-ping"></div>
+                            <div className="relative w-1.5 h-1.5 rounded-full bg-blue-400/60"></div>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    );
+}
+
+const navLinks = [
+    { name: 'Home', icon: LayoutDashboard, href: '/' },
+    { name: 'Orders', icon: Package, href: '/my-orders' },
+    { name: 'Inventory', icon: Package, href: '/stock' },
+    { name: 'Profile', icon: User, href: '/user/profile' },
+];
