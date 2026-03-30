@@ -25,10 +25,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         const newToast: Toast = { id, title, description, variant };
         setToasts((prev) => [...prev, newToast]);
 
-        // Auto dismiss after 5 seconds
+        // Auto dismiss after 10 seconds for error toasts, 5 seconds for others
+        const duration = variant === 'destructive' ? 10000 : 5000;
         setTimeout(() => {
             setToasts((prev) => prev.filter((t) => t.id !== id));
-        }, 5000);
+        }, duration);
     }, []);
 
     const dismiss = useCallback((id: string) => {

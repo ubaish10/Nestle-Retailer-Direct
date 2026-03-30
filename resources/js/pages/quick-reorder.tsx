@@ -389,23 +389,37 @@ export default function QuickReorder({ products, distributors }: Props) {
             return;
         }
 
+        // Debug logging
+        console.log('Card validation debug:', {
+            cardNumber,
+            cardNumberLength: cardNumber.replace(/\D/g, '').length,
+            cardExpiry,
+            cardCvv,
+            cardName,
+        });
+
         // Validate card details
         if (!validateCardNumber(cardNumber)) {
+            const digits = cardNumber.replace(/\D/g, '');
             toast({
                 title: 'Invalid Card Number',
-                description: 'Please enter a valid 16-digit card number',
+                description: `Please enter a valid 16-digit card number. Current: ${digits.length} digits`,
                 variant: 'destructive',
             });
+            console.error('Card number validation failed:', digits);
             cardNumberRef.current?.focus();
             return;
         }
 
         if (!validateExpiryDate(cardExpiry)) {
+            const currentYear = new Date().getFullYear() % 100;
+            const currentMonth = new Date().getMonth() + 1;
             toast({
                 title: 'Invalid Expiry Date',
-                description: 'Please enter a valid expiry date (MM/YY)',
+                description: `Please enter a valid expiry date (MM/YY). Current: ${currentMonth}/${currentYear}`,
                 variant: 'destructive',
             });
+            console.error('Expiry validation failed:', cardExpiry, 'Current:', `${currentMonth}/${currentYear}`);
             return;
         }
 
@@ -415,6 +429,7 @@ export default function QuickReorder({ products, distributors }: Props) {
                 description: 'Please enter a valid 3-digit CVV',
                 variant: 'destructive',
             });
+            console.error('CVV validation failed:', cardCvv);
             return;
         }
 
