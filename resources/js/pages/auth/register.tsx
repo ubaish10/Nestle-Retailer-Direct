@@ -105,6 +105,7 @@ export default function Register() {
                                         <Input
                                             id="shop_name"
                                             type="text"
+                                            required
                                             name="shop_name"
                                             placeholder="Your shop name"
                                         />
@@ -116,6 +117,7 @@ export default function Register() {
                                         <Input
                                             id="shop_address"
                                             type="text"
+                                            required
                                             name="shop_address"
                                             placeholder="Street address"
                                         />
@@ -128,6 +130,7 @@ export default function Register() {
                                             <Input
                                                 id="shop_city"
                                                 type="text"
+                                                required
                                                 name="shop_city"
                                                 placeholder="City"
                                             />
@@ -137,9 +140,11 @@ export default function Register() {
                                             <Label htmlFor="shop_phone">Phone</Label>
                                             <Input
                                                 id="shop_phone"
-                                                type="text"
+                                                type="tel"
+                                                required
+                                                pattern="[0-9]{10}"
                                                 name="shop_phone"
-                                                placeholder="Phone number"
+                                                placeholder="10 digit phone number"
                                             />
                                             <InputError message={errors.shop_phone} />
                                         </div>
@@ -155,6 +160,7 @@ export default function Register() {
                                         <Input
                                             id="company_name"
                                             type="text"
+                                            required
                                             name="company_name"
                                             placeholder="Your company name"
                                         />
@@ -166,6 +172,7 @@ export default function Register() {
                                         <Input
                                             id="company_address"
                                             type="text"
+                                            required
                                             name="company_address"
                                             placeholder="Street address"
                                         />
@@ -178,6 +185,7 @@ export default function Register() {
                                             <Input
                                                 id="company_city"
                                                 type="text"
+                                                required
                                                 name="company_city"
                                                 placeholder="City"
                                             />
@@ -187,9 +195,11 @@ export default function Register() {
                                             <Label htmlFor="company_phone">Phone</Label>
                                             <Input
                                                 id="company_phone"
-                                                type="text"
+                                                type="tel"
+                                                required
+                                                pattern="[0-9]{10}"
                                                 name="company_phone"
-                                                placeholder="Phone number"
+                                                placeholder="10 digit phone number"
                                             />
                                             <InputError message={errors.company_phone} />
                                         </div>
