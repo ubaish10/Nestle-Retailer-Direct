@@ -36,6 +36,19 @@ class OrderController extends Controller
             'distributor_id.required' => 'Please select a distributor to place your order.',
         ]);
 
+        // Validate that the selected distributor is approved
+        $distributor = User::where('id', $validated['distributor_id'])
+            ->where('role', 'distributor')
+            ->where('approval_status', 'approved')
+            ->first();
+            
+        if (!$distributor) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['distributor_id' => 'Selected distributor is not available.'],
+            ], 422);
+        }
+
         // Validate that order quantity doesn't exceed distributor warehouse stock
         foreach ($validated['items'] as $item) {
             if (!empty($item['product_id']) && !empty($validated['distributor_id'])) {

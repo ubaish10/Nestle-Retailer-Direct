@@ -17,8 +17,9 @@ class QuickReorderController extends Controller
     {
         $retailerId = auth()->id();
 
-        // Get distributors with their stock quantities
+        // Get only APPROVED distributors with their stock quantities
         $distributors = User::where('role', 'distributor')
+            ->where('approval_status', 'approved')
             ->with('distributorProfile')
             ->get()
             ->map(function ($user) {
