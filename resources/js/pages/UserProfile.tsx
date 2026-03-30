@@ -47,8 +47,8 @@ export default function UserProfile({ user }: Props) {
 
     const passwordForm = useForm({
         current_password: '',
-        new_password: '',
-        new_password_confirmation: '',
+        password: '',
+        password_confirmation: '',
     });
 
     const handleProfileSubmit = (e: React.FormEvent) => {
@@ -322,13 +322,13 @@ export default function UserProfile({ user }: Props) {
 
                                             {/* New Password */}
                                             <div className="space-y-2">
-                                                <Label htmlFor="new_password">New Password</Label>
+                                                <Label htmlFor="password">New Password</Label>
                                                 <div className="relative">
                                                     <Input
-                                                        id="new_password"
+                                                        id="password"
                                                         type={showNewPassword ? 'text' : 'password'}
-                                                        value={passwordForm.data.new_password}
-                                                        onChange={(e) => passwordForm.setData('new_password', e.target.value)}
+                                                        value={passwordForm.data.password}
+                                                        onChange={(e) => passwordForm.setData('password', e.target.value)}
                                                         placeholder="Enter new password"
                                                         className="bg-white/50 dark:bg-white/5 pr-10"
                                                     />
@@ -346,20 +346,20 @@ export default function UserProfile({ user }: Props) {
                                                         )}
                                                     </Button>
                                                 </div>
-                                                {passwordForm.errors.new_password && (
-                                                    <p className="text-sm text-red-500">{passwordForm.errors.new_password}</p>
+                                                {passwordForm.errors.password && (
+                                                    <p className="text-sm text-red-500">{passwordForm.errors.password}</p>
                                                 )}
                                             </div>
 
                                             {/* Confirm Password */}
                                             <div className="space-y-2 md:col-span-2">
-                                                <Label htmlFor="new_password_confirmation">Confirm New Password</Label>
+                                                <Label htmlFor="password_confirmation">Confirm New Password</Label>
                                                 <div className="relative">
                                                     <Input
-                                                        id="new_password_confirmation"
+                                                        id="password_confirmation"
                                                         type={showConfirmPassword ? 'text' : 'password'}
-                                                        value={passwordForm.data.new_password_confirmation}
-                                                        onChange={(e) => passwordForm.setData('new_password_confirmation', e.target.value)}
+                                                        value={passwordForm.data.password_confirmation}
+                                                        onChange={(e) => passwordForm.setData('password_confirmation', e.target.value)}
                                                         placeholder="Confirm new password"
                                                         className="bg-white/50 dark:bg-white/5 pr-10"
                                                     />
@@ -377,8 +377,8 @@ export default function UserProfile({ user }: Props) {
                                                         )}
                                                     </Button>
                                                 </div>
-                                                {passwordForm.errors.new_password_confirmation && (
-                                                    <p className="text-sm text-red-500">{passwordForm.errors.new_password_confirmation}</p>
+                                                {passwordForm.errors.password_confirmation && (
+                                                    <p className="text-sm text-red-500">{passwordForm.errors.password_confirmation}</p>
                                                 )}
                                             </div>
                                         </div>
