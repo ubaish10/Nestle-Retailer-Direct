@@ -530,8 +530,11 @@ export default function QuickReorder({ products, distributors }: Props) {
                                                 key={distributor.id}
                                                 onClick={() => setSelectedDistributor(distributor)}
                                             >
-                                                <div className="flex flex-col">
+                                                <div className="flex flex-col gap-0.5">
                                                     <span className="font-medium text-xs md:text-sm">{distributor.company_name || distributor.name}</span>
+                                                    {distributor.company_city && (
+                                                        <span className="text-[10px] md:text-xs text-gray-500">{distributor.company_city}</span>
+                                                    )}
                                                 </div>
                                             </DropdownMenuItem>
                                         ))}

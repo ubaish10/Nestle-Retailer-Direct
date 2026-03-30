@@ -27,6 +27,7 @@ class QuickReorderController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'company_name' => $user->distributorProfile?->company_name ?? null,
+                    'company_city' => $user->distributorProfile?->company_city ?? null,
                 ];
             })->values();
 

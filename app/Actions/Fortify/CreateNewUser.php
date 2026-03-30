@@ -21,6 +21,11 @@ class CreateNewUser implements CreatesNewUsers
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', 'in:retailer,distributor'],
+            // Distributor profile fields
+            'company_name' => ['nullable', 'string', 'max:255'],
+            'company_address' => ['nullable', 'string', 'max:255'],
+            'company_city' => ['nullable', 'string', 'max:255'],
+            'company_phone' => ['nullable', 'string', 'max:255'],
         ])->validate();
 
         $user = User::create([
@@ -35,7 +40,12 @@ class CreateNewUser implements CreatesNewUsers
         if ($input['role'] === 'retailer') {
             $user->shopProfile()->create([]);
         } elseif ($input['role'] === 'distributor') {
-            $user->distributorProfile()->create([]);
+            $user->distributorProfile()->create([
+                'company_name' => $input['company_name'] ?? null,
+                'company_address' => $input['company_address'] ?? null,
+                'company_city' => $input['company_city'] ?? null,
+                'company_phone' => $input['company_phone'] ?? null,
+            ]);
         }
 
         return $user;
