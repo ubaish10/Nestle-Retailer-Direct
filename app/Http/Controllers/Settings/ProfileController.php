@@ -34,20 +34,16 @@ class ProfileController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'city' => ['nullable', 'string', 'max:255'],
         ]);
 
         $user = $request->user();
 
         // Update basic user info
         $user->name = $validated['name'];
-        $user->email = $validated['email'];
         $user->save();
 
-        // Update phone, address and city in appropriate profile table
+        // Update phone in appropriate profile table
         if ($user->isRetailer()) {
             $shopProfile = $user->shopProfile;
             if (!$shopProfile) {
@@ -55,8 +51,6 @@ class ProfileController extends Controller
                 $shopProfile->user_id = $user->id;
             }
             $shopProfile->shop_phone = $validated['phone'] ?? null;
-            $shopProfile->shop_address = $validated['address'] ?? null;
-            $shopProfile->shop_city = $validated['city'] ?? null;
             $shopProfile->save();
         } elseif ($user->isDistributor()) {
             $distributorProfile = $user->distributorProfile;
@@ -65,8 +59,6 @@ class ProfileController extends Controller
                 $distributorProfile->user_id = $user->id;
             }
             $distributorProfile->company_phone = $validated['phone'] ?? null;
-            $distributorProfile->company_address = $validated['address'] ?? null;
-            $distributorProfile->company_city = $validated['city'] ?? null;
             $distributorProfile->save();
         }
 

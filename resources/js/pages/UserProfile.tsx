@@ -194,12 +194,10 @@ export default function UserProfile({ user }: Props) {
                                             id="email"
                                             type="email"
                                             value={profileForm.data.email}
-                                            onChange={(e) => profileForm.setData('email', e.target.value)}
-                                            className="bg-white/50 dark:bg-white/5"
+                                            disabled
+                                            className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
                                         />
-                                        {profileForm.errors.email && (
-                                            <p className="text-sm text-red-500">{profileForm.errors.email}</p>
-                                        )}
+                                        <p className="text-xs text-slate-500">Email cannot be changed</p>
                                     </div>
 
                                     {/* Phone */}
@@ -228,12 +226,10 @@ export default function UserProfile({ user }: Props) {
                                         <Input
                                             id="address"
                                             value={profileForm.data.address || ''}
-                                            onChange={(e) => profileForm.setData('address', e.target.value)}
-                                            className="bg-white/50 dark:bg-white/5"
+                                            disabled
+                                            className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
                                         />
-                                        {profileForm.errors.address && (
-                                            <p className="text-sm text-red-500">{profileForm.errors.address}</p>
-                                        )}
+                                        <p className="text-xs text-slate-500">Address cannot be changed</p>
                                     </div>
 
                                     {/* City */}
@@ -245,26 +241,15 @@ export default function UserProfile({ user }: Props) {
                                         <Input
                                             id="city"
                                             value={profileForm.data.city || ''}
-                                            onChange={(e) => profileForm.setData('city', e.target.value)}
-                                            className="bg-white/50 dark:bg-white/5"
+                                            disabled
+                                            className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
                                         />
-                                        {profileForm.errors.city && (
-                                            <p className="text-sm text-red-500">{profileForm.errors.city}</p>
-                                        )}
+                                        <p className="text-xs text-slate-500">City cannot be changed</p>
                                     </div>
                                 </div>
 
                                 {/* Save Button */}
-                                <div className="flex justify-end gap-3 pt-4 border-t">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => profileForm.reset()}
-                                        disabled={profileForm.processing}
-                                        className="border-gray-300"
-                                    >
-                                        Cancel
-                                    </Button>
+                                <div className="flex justify-end pt-4 border-t">
                                     <Button
                                         type="submit"
                                         disabled={profileForm.processing}
