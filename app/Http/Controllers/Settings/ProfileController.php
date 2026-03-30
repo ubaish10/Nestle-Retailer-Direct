@@ -21,9 +21,24 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user()->load(['shopProfile', 'distributorProfile']);
+
+        $shopName = null;
+        $companyName = null;
+
+        if ($user->isRetailer() && $user->shopProfile) {
+            $shopName = $user->shopProfile->shop_name;
+        }
+
+        if ($user->isDistributor() && $user->distributorProfile) {
+            $companyName = $user->distributorProfile->company_name;
+        }
+
         return Inertia::render('settings/profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'shopName' => $shopName,
+            'companyName' => $companyName,
         ]);
     }
 

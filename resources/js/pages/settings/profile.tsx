@@ -22,9 +22,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Profile({
     mustVerifyEmail,
     status,
+    shopName,
+    companyName,
 }: {
     mustVerifyEmail: boolean;
     status?: string;
+    shopName?: string | null;
+    companyName?: string | null;
 }) {
     const { auth } = usePage().props;
 
@@ -70,6 +74,36 @@ export default function Profile({
                                         message={errors.name}
                                     />
                                 </div>
+
+                                {shopName && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="shopName">Shop Name</Label>
+
+                                        <Input
+                                            id="shopName"
+                                            className="mt-1 block w-full bg-slate-100 cursor-not-allowed"
+                                            defaultValue={shopName}
+                                            disabled
+                                            autoComplete="off"
+                                            placeholder="Shop name"
+                                        />
+                                    </div>
+                                )}
+
+                                {companyName && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="companyName">Company Name</Label>
+
+                                        <Input
+                                            id="companyName"
+                                            className="mt-1 block w-full bg-slate-100 cursor-not-allowed"
+                                            defaultValue={companyName}
+                                            disabled
+                                            autoComplete="off"
+                                            placeholder="Company name"
+                                        />
+                                    </div>
+                                )}
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="email">Email address</Label>

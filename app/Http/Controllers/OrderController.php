@@ -300,20 +300,24 @@ class OrderController extends Controller
      */
     public function userProfile()
     {
-        $user = Auth::user();
-        
+        $user = Auth::user()->load(['shopProfile', 'distributorProfile']);
+
         $phone = null;
         $address = null;
         $city = null;
-        
+        $shopName = null;
+        $companyName = null;
+
         if ($user->isRetailer() && $user->shopProfile) {
             $phone = $user->shopProfile->shop_phone;
             $address = $user->shopProfile->shop_address;
             $city = $user->shopProfile->shop_city;
+            $shopName = $user->shopProfile->shop_name;
         } elseif ($user->isDistributor() && $user->distributorProfile) {
             $phone = $user->distributorProfile->company_phone;
             $address = $user->distributorProfile->company_address;
             $city = $user->distributorProfile->company_city;
+            $companyName = $user->distributorProfile->company_name;
         }
 
         return inertia('UserProfile', [
@@ -324,6 +328,8 @@ class OrderController extends Controller
                 'phone' => $phone,
                 'address' => $address,
                 'city' => $city,
+                'shopName' => $shopName,
+                'companyName' => $companyName,
                 'created_at' => $user->created_at,
             ],
         ]);

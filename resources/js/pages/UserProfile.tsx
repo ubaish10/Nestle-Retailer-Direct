@@ -16,6 +16,8 @@ interface Props {
         phone?: string | null;
         address?: string | null;
         city?: string | null;
+        shopName?: string | null;
+        companyName?: string | null;
         created_at: string;
     };
 }
@@ -183,6 +185,39 @@ export default function UserProfile({ user }: Props) {
                                             <p className="text-sm text-red-500">{profileForm.errors.name}</p>
                                         )}
                                     </div>
+
+                                    {/* Shop Name / Company Name */}
+                                    {user.shopName && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="shopName" className="flex items-center gap-2">
+                                                <User className="h-4 w-4" />
+                                                Shop Name
+                                            </Label>
+                                            <Input
+                                                id="shopName"
+                                                value={user.shopName}
+                                                disabled
+                                                className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                                            />
+                                            <p className="text-xs text-slate-500">Shop name cannot be changed</p>
+                                        </div>
+                                    )}
+
+                                    {user.companyName && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="companyName" className="flex items-center gap-2">
+                                                <User className="h-4 w-4" />
+                                                Company Name
+                                            </Label>
+                                            <Input
+                                                id="companyName"
+                                                value={user.companyName}
+                                                disabled
+                                                className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                                            />
+                                            <p className="text-xs text-slate-500">Company name cannot be changed</p>
+                                        </div>
+                                    )}
 
                                     {/* Email */}
                                     <div className="space-y-2">
