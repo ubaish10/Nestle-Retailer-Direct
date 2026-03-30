@@ -168,7 +168,11 @@ class PayPalController extends Controller
             return redirect()->route('home')->withErrors(['paypal' => 'Invalid order.']);
         }
 
-        return redirect()->route('my-orders')->withErrors(['paypal' => 'Payment was cancelled.']);
+        // Delete the order since payment was cancelled - order should not exist
+        $order->delete();
+
+        // Redirect back to quick-reorder page so user can select payment method again
+        return redirect()->route('quick-reorder')->withErrors(['paypal' => 'Payment was cancelled. No order was created.']);
     }
 
     /**

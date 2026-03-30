@@ -316,10 +316,7 @@ export default function QuickReorder({ products, distributors }: Props) {
             .then(data => {
                 setIsSubmitting(false);
                 if (data.success && data.redirectUrl) {
-                    toast({
-                        title: 'Order placed successfully!',
-                        description: 'Redirecting to PayPal...',
-                    });
+                    // Don't show success toast yet - wait for PayPal payment to complete
                     // Full page redirect bypassing Inertia
                     window.location.assign(data.redirectUrl);
                 } else {
