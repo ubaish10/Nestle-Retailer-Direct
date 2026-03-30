@@ -45,7 +45,7 @@ class RedirectBasedOnRole
             }
 
             foreach ($retailerRoutes as $prefix) {
-                if (str_starts_with($currentRoute, $prefix) || str_contains($currentRoute, $prefix)) {
+                if (str_starts_with($currentRoute, $prefix) || $currentRoute === $prefix) {
                     $isRetailerRoute = true;
                     break;
                 }

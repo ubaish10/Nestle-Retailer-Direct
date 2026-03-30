@@ -539,7 +539,8 @@ class DistributorController extends Controller
             ->first();
 
         if ($distributorInventory) {
-            $distributorInventory->increment('stock_quantity', $validated['quantity']);
+            $distributorInventory->stock_quantity = $distributorInventory->stock_quantity + $validated['quantity'];
+            $distributorInventory->save();
         } else {
             DistributorInventory::create([
                 'user_id' => $distributorId,
@@ -548,7 +549,8 @@ class DistributorController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'Stock added successfully!');
+        // Redirect back to warehouse inventory page
+        return redirect()->route('distributor.warehouse-inventory');
     }
 
     /**

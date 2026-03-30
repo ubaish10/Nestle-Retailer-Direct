@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { Search, Package, AlertTriangle, Warehouse, TrendingUp, TrendingDown, Eye, EyeOff, ChevronLeft, HelpCircle, LayoutDashboard, Settings, Plus, User } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -70,7 +70,11 @@ export default function WarehouseInventory({ products, stats }: Props) {
     const [stockFilter, setStockFilter] = useState<string>('all');
     const [showOutOfStock, setShowOutOfStock] = useState(true);
     const [restockProduct, setRestockProduct] = useState<Product | null>(null);
-    const [restockQuantity, setRestockQuantity] = useState<number>(0);
+    const [processingProductId, setProcessingProductId] = useState<number | null>(null);
+    
+    const form = useForm({
+        quantity: 0,
+    });
 
     const filteredProducts = products
         .filter((product) => {
@@ -83,28 +87,32 @@ export default function WarehouseInventory({ products, stats }: Props) {
 
     const handleRestockClick = (product: Product) => {
         setRestockProduct(product);
-        setRestockQuantity(0);
+        form.setData('quantity', 0);
     };
 
     const handleRestockSubmit = () => {
-        if (restockProduct && restockQuantity > 0) {
-            router.post(`/distributor/warehouse-inventory/${restockProduct.id}/restock`, {
-                quantity: restockQuantity,
-            }, {
+        if (restockProduct && form.data.quantity > 0) {
+            setProcessingProductId(restockProduct.id);
+            form.post(`/distributor/warehouse-inventory/${restockProduct.id}/restock`, {
                 preserveScroll: true,
-                onSuccess: () => {
+                onSuccess: (page) => {
+                    console.log('Restock success, new props:', page.props);
                     toast({
                         title: 'Stock added!',
-                        description: `${restockProduct.name} quantity increased by ${restockQuantity} units.`,
+                        description: `${restockProduct.name} quantity increased by ${form.data.quantity} units.`,
                     });
                     setRestockProduct(null);
+                    setProcessingProductId(null);
+                    form.setData('quantity', 0);
                 },
-                onError: () => {
+                onError: (errors) => {
+                    console.error('Restock error:', errors);
                     toast({
                         title: 'Failed to add stock',
                         description: 'There was an error updating the stock quantity.',
                         variant: 'destructive',
                     });
+                    setProcessingProductId(null);
                 },
             });
         }
@@ -288,12 +296,22 @@ export default function WarehouseInventory({ products, stats }: Props) {
                                         </div>
                                         <Button
                                             onClick={() => handleRestockClick(product)}
+                                            disabled={processingProductId === product.id}
                                             className="w-full text-xs h-8"
                                             variant="outline"
                                             size="sm"
                                         >
-                                            <Plus className="h-3 w-3 mr-1" />
-                                            Add Stock
+                                            {processingProductId === product.id ? (
+                                                <>
+                                                    <div className="h-3 w-3 mr-1 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                    Adding...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Plus className="h-3 w-3 mr-1" />
+                                                    Add Stock
+                                                </>
+                                            )}
                                         </Button>
                                     </CardContent>
                                 </Card>
@@ -304,7 +322,11 @@ export default function WarehouseInventory({ products, stats }: Props) {
             </main>
 
             {/* Restock Dialog */}
-            <Dialog open={!!restockProduct} onOpenChange={() => setRestockProduct(null)}>
+            <Dialog open={!!restockProduct} onOpenChange={(open) => {
+                if (!open && processingProductId === null) {
+                    setRestockProduct(null);
+                }
+            }}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle>Add Stock to Warehouse</DialogTitle>
@@ -319,24 +341,33 @@ export default function WarehouseInventory({ products, stats }: Props) {
                                 id="quantity"
                                 type="number"
                                 min="1"
-                                value={restockQuantity}
-                                onChange={(e) => setRestockQuantity(parseInt(e.target.value) || 0)}
+                                value={form.data.quantity}
+                                onChange={(e) => form.setData('quantity', parseInt(e.target.value) || 0)}
                                 className="w-full"
                                 placeholder="Enter quantity"
                             />
                         </div>
                         <div className="text-sm text-muted-foreground">
                             <p>Current stock: <Badge>{restockProduct?.stock_quantity || 0} units</Badge></p>
-                            <p className="mt-1">New stock: <Badge>{(restockProduct?.stock_quantity || 0) + restockQuantity} units</Badge></p>
+                            <p className="mt-1">New stock: <Badge>{(restockProduct?.stock_quantity || 0) + form.data.quantity} units</Badge></p>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setRestockProduct(null)}>
+                        <Button variant="outline" onClick={() => setRestockProduct(null)} disabled={processingProductId !== null}>
                             Cancel
                         </Button>
-                        <Button onClick={handleRestockSubmit}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Stock
+                        <Button onClick={handleRestockSubmit} disabled={processingProductId !== null || form.data.quantity <= 0}>
+                            {processingProductId !== null ? (
+                                <>
+                                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                    Adding...
+                                </>
+                            ) : (
+                                <>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Stock
+                                </>
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
