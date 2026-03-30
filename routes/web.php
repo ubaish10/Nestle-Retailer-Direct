@@ -113,9 +113,9 @@ Route::middleware(['auth'])->get('/user/profile', [OrderController::class, 'user
 
 // PayPal payment routes
 Route::middleware(['auth'])->group(function () {
-    Route::get('/paypal/process/{order_id}', [PayPalController::class, 'processPayment'])->name('paypal.process');
-    Route::get('/paypal/success/{order_id}', [PayPalController::class, 'success'])->name('paypal.success');
-    Route::get('/paypal/cancel/{order_id}', [PayPalController::class, 'cancel'])->name('paypal.cancel');
+    Route::match(['get', 'post'], '/paypal/process', [PayPalController::class, 'processPayment'])->name('paypal.process');
+    Route::get('/paypal/success', [PayPalController::class, 'success'])->name('paypal.success');
+    Route::get('/paypal/cancel', [PayPalController::class, 'cancel'])->name('paypal.cancel');
     Route::post('/paypal/notify', [PayPalController::class, 'notify'])->name('paypal.notify');
 });
 

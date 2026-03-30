@@ -70,6 +70,49 @@ class OrderController extends Controller
             $totalAmount += $item['quantity'] * $item['price'];
         }
 
+        // For PayPal payment, redirect to PayPal controller with order data (don't create order yet)
+        if ($validated['payment_method'] === 'paypal') {
+            // Return JSON with redirect URL to PayPal process endpoint
+            return response()->json([
+                'success' => true,
+                'redirectUrl' => route('paypal.process'),
+                'orderData' => [
+                    'distributor_id' => $validated['distributor_id'],
+                    'payment_method' => $validated['payment_method'],
+                    'items' => $validated['items'],
+                ],
+            ]);
+        }
+
+        // For Credit Card payment, process immediately (mock payment - instant success)
+        if ($validated['payment_method'] === 'credit_card') {
+            $order = Order::create([
+                'user_id' => Auth::id(),
+                'distributor_id' => $validated['distributor_id'],
+                'status' => 'pending',
+                'total_amount' => $totalAmount,
+                'payment_method' => 'credit_card',
+                'payment_status' => 'paid',
+            ]);
+
+            foreach ($validated['items'] as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item['product_id'] ?? null,
+                    'product_name' => $item['product_name'],
+                    'product_image' => $item['product_image'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'subtotal' => $item['quantity'] * $item['price'],
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+            ]);
+        }
+
+        // For COD, create the order
         $order = Order::create([
             'user_id' => Auth::id(),
             'distributor_id' => $validated['distributor_id'],
@@ -88,26 +131,6 @@ class OrderController extends Controller
                 'quantity' => $item['quantity'],
                 'price' => $item['price'],
                 'subtotal' => $item['quantity'] * $item['price'],
-            ]);
-        }
-
-        // For PayPal payment, return JSON with redirect URL
-        if ($validated['payment_method'] === 'paypal') {
-            return response()->json([
-                'success' => true,
-                'redirectUrl' => route('paypal.process', ['order_id' => $order->id]),
-            ]);
-        }
-
-        // For Credit Card payment, process immediately (mock payment - instant success)
-        if ($validated['payment_method'] === 'credit_card') {
-            $order->update([
-                'payment_status' => 'paid',
-                'payment_method' => 'credit_card',
-            ]);
-
-            return response()->json([
-                'success' => true,
             ]);
         }
 

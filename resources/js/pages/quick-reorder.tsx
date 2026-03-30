@@ -298,7 +298,7 @@ export default function QuickReorder({ products, distributors }: Props) {
         setIsSubmitting(true);
 
         if (selectedPaymentMethod === 'paypal') {
-            // Use fetch for PayPal to get JSON response and redirect manually
+            // First, submit order to /orders to get order data validated
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
             fetch('/orders', {
@@ -317,8 +317,30 @@ export default function QuickReorder({ products, distributors }: Props) {
                 setIsSubmitting(false);
                 if (data.success && data.redirectUrl) {
                     // Don't show success toast yet - wait for PayPal payment to complete
-                    // Full page redirect bypassing Inertia
-                    window.location.assign(data.redirectUrl);
+                    // Redirect to PayPal process endpoint with order data
+                    const paypalUrl = data.redirectUrl;
+                    
+                    // Create a form and submit order data to PayPal endpoint via POST
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = paypalUrl;
+                    
+                    // Add CSRF token
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '_token';
+                    csrfInput.value = csrfToken;
+                    form.appendChild(csrfInput);
+                    
+                    // Add order data
+                    const dataInput = document.createElement('input');
+                    dataInput.type = 'hidden';
+                    dataInput.name = 'order_data';
+                    dataInput.value = JSON.stringify(data.orderData);
+                    form.appendChild(dataInput);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
                 } else {
                     throw new Error('Invalid response from server');
                 }
