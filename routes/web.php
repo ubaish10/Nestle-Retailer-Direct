@@ -39,6 +39,9 @@ Route::post('/clear-approval-status', function (\Illuminate\Http\Request $reques
     return redirect()->route('login');
 })->name('clear-approval-status');
 
+// Settings routes (must be before admin/distributor routes)
+require __DIR__.'/settings.php';
+
 // Distributor routes
 Route::middleware(['auth', 'verified', 'distributor'])->group(function () {
     Route::get('/distributor/home', [DistributorController::class, 'home'])->name('distributor.home');
@@ -122,5 +125,3 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/paypal/cancel', [PayPalController::class, 'cancel'])->name('paypal.cancel');
     Route::post('/paypal/notify', [PayPalController::class, 'notify'])->name('paypal.notify');
 });
-
-require __DIR__.'/settings.php';

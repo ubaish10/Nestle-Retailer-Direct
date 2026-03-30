@@ -34,7 +34,6 @@ class ProfileController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20'],
         ]);
 
         $user = $request->user();
@@ -43,26 +42,7 @@ class ProfileController extends Controller
         $user->name = $validated['name'];
         $user->save();
 
-        // Update phone in appropriate profile table
-        if ($user->isRetailer()) {
-            $shopProfile = $user->shopProfile;
-            if (!$shopProfile) {
-                $shopProfile = new ShopProfile();
-                $shopProfile->user_id = $user->id;
-            }
-            $shopProfile->shop_phone = $validated['phone'] ?? null;
-            $shopProfile->save();
-        } elseif ($user->isDistributor()) {
-            $distributorProfile = $user->distributorProfile;
-            if (!$distributorProfile) {
-                $distributorProfile = new DistributorProfile();
-                $distributorProfile->user_id = $user->id;
-            }
-            $distributorProfile->company_phone = $validated['phone'] ?? null;
-            $distributorProfile->save();
-        }
-
-        return redirect()->route('user.profile');
+        return redirect()->route('profile.edit');
     }
 
     /**
