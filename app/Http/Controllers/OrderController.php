@@ -301,13 +301,28 @@ class OrderController extends Controller
     {
         $user = Auth::user();
         
+        $phone = null;
+        $address = null;
+        $city = null;
+        
+        if ($user->isRetailer() && $user->shopProfile) {
+            $phone = $user->shopProfile->shop_phone;
+            $address = $user->shopProfile->shop_address;
+            $city = $user->shopProfile->shop_city;
+        } elseif ($user->isDistributor() && $user->distributorProfile) {
+            $phone = $user->distributorProfile->company_phone;
+            $address = $user->distributorProfile->company_address;
+            $city = $user->distributorProfile->company_city;
+        }
+
         return inertia('UserProfile', [
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'phone' => $user->phone ?? null,
-                'address' => $user->address ?? null,
+                'phone' => $phone,
+                'address' => $address,
+                'city' => $city,
                 'created_at' => $user->created_at,
             ],
         ]);

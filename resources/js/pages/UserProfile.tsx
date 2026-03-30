@@ -15,6 +15,7 @@ interface Props {
         email: string;
         phone?: string | null;
         address?: string | null;
+        city?: string | null;
         created_at: string;
     };
 }
@@ -41,6 +42,7 @@ export default function UserProfile({ user }: Props) {
         email: user.email || '',
         phone: user.phone || '',
         address: user.address || '',
+        city: user.city || '',
     });
 
     const passwordForm = useForm({
@@ -51,8 +53,9 @@ export default function UserProfile({ user }: Props) {
 
     const handleProfileSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         profileForm.put('/user/profile-information', {
+            preserveScroll: true,
             onSuccess: () => {
                 toast({
                     title: 'Profile updated',
@@ -100,7 +103,7 @@ export default function UserProfile({ user }: Props) {
                     <div className="container mx-auto px-4 py-6">
                         <div className="flex items-center gap-4">
                             <Link
-                                href="/my-orders"
+                                href="/"
                                 className="p-2 hover:bg-white/10 rounded-full transition-colors"
                             >
                                 <ArrowLeft className="h-6 w-6" />
@@ -209,7 +212,6 @@ export default function UserProfile({ user }: Props) {
                                             id="phone"
                                             value={profileForm.data.phone || ''}
                                             onChange={(e) => profileForm.setData('phone', e.target.value)}
-                                            placeholder="Enter your phone number"
                                             className="bg-white/50 dark:bg-white/5"
                                         />
                                         {profileForm.errors.phone && (
@@ -227,11 +229,27 @@ export default function UserProfile({ user }: Props) {
                                             id="address"
                                             value={profileForm.data.address || ''}
                                             onChange={(e) => profileForm.setData('address', e.target.value)}
-                                            placeholder="Enter your address"
                                             className="bg-white/50 dark:bg-white/5"
                                         />
                                         {profileForm.errors.address && (
                                             <p className="text-sm text-red-500">{profileForm.errors.address}</p>
+                                        )}
+                                    </div>
+
+                                    {/* City */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="city" className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4" />
+                                            City
+                                        </Label>
+                                        <Input
+                                            id="city"
+                                            value={profileForm.data.city || ''}
+                                            onChange={(e) => profileForm.setData('city', e.target.value)}
+                                            className="bg-white/50 dark:bg-white/5"
+                                        />
+                                        {profileForm.errors.city && (
+                                            <p className="text-sm text-red-500">{profileForm.errors.city}</p>
                                         )}
                                     </div>
                                 </div>

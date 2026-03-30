@@ -21,6 +21,11 @@ class CreateNewUser implements CreatesNewUsers
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', 'in:retailer,distributor'],
+            // Retailer profile fields
+            'shop_name' => ['nullable', 'string', 'max:255'],
+            'shop_address' => ['nullable', 'string', 'max:255'],
+            'shop_city' => ['nullable', 'string', 'max:255'],
+            'shop_phone' => ['nullable', 'string', 'max:255'],
             // Distributor profile fields
             'company_name' => ['nullable', 'string', 'max:255'],
             'company_address' => ['nullable', 'string', 'max:255'],
@@ -38,7 +43,12 @@ class CreateNewUser implements CreatesNewUsers
 
         // Create profile based on role
         if ($input['role'] === 'retailer') {
-            $user->shopProfile()->create([]);
+            $user->shopProfile()->create([
+                'shop_name' => $input['shop_name'] ?? null,
+                'shop_address' => $input['shop_address'] ?? null,
+                'shop_city' => $input['shop_city'] ?? null,
+                'shop_phone' => $input['shop_phone'] ?? null,
+            ]);
         } elseif ($input['role'] === 'distributor') {
             $user->distributorProfile()->create([
                 'company_name' => $input['company_name'] ?? null,

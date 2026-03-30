@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\ShopProfile;
+use App\Models\DistributorProfile;
 
 class ProfileController extends Controller
 {
@@ -28,17 +30,47 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(Request $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:255'],
+        ]);
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $user = $request->user();
+
+        // Update basic user info
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->save();
+
+        // Update phone, address and city in appropriate profile table
+        if ($user->isRetailer()) {
+            $shopProfile = $user->shopProfile;
+            if (!$shopProfile) {
+                $shopProfile = new ShopProfile();
+                $shopProfile->user_id = $user->id;
+            }
+            $shopProfile->shop_phone = $validated['phone'] ?? null;
+            $shopProfile->shop_address = $validated['address'] ?? null;
+            $shopProfile->shop_city = $validated['city'] ?? null;
+            $shopProfile->save();
+        } elseif ($user->isDistributor()) {
+            $distributorProfile = $user->distributorProfile;
+            if (!$distributorProfile) {
+                $distributorProfile = new DistributorProfile();
+                $distributorProfile->user_id = $user->id;
+            }
+            $distributorProfile->company_phone = $validated['phone'] ?? null;
+            $distributorProfile->company_address = $validated['address'] ?? null;
+            $distributorProfile->company_city = $validated['city'] ?? null;
+            $distributorProfile->save();
         }
 
-        $request->user()->save();
-
-        return to_route('profile.edit');
+        return redirect()->route('user.profile');
     }
 
     /**

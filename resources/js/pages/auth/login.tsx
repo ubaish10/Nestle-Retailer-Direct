@@ -103,7 +103,7 @@ export default function Login({
                     </div>
 
                     <Button
-                        onClick={handleRefreshPending}
+                        onClick={handleProceedToLogin}
                         className="gap-2"
                         variant="outline"
                     >

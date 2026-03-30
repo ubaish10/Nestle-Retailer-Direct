@@ -12,6 +12,7 @@ use App\Http\Controllers\QuickReorderController;
 use App\Http\Controllers\RetailerInventoryController;
 use App\Http\Controllers\PayPalController;
 use App\Http\Controllers\UserApprovalsController;
+use App\Http\Controllers\Settings\ProfileController;
 
 // Home route - redirects based on user role
 Route::get('/', function () {
@@ -110,6 +111,7 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
 Route::middleware(['auth'])->post('/orders', [OrderController::class, 'store'])->name('orders.store');
 Route::middleware(['auth'])->get('/my-orders', [OrderController::class, 'myOrders'])->name('my-orders');
 Route::middleware(['auth'])->get('/user/profile', [OrderController::class, 'userProfile'])->name('user.profile');
+Route::middleware(['auth'])->put('/user/profile-information', [ProfileController::class, 'update'])->name('user.profile-information.update');
 
 // PayPal payment routes
 Route::middleware(['auth'])->group(function () {
