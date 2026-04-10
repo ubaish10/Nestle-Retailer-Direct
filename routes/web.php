@@ -12,6 +12,7 @@ use App\Http\Controllers\QuickReorderController;
 use App\Http\Controllers\RetailerInventoryController;
 use App\Http\Controllers\PayPalController;
 use App\Http\Controllers\UserApprovalsController;
+use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\PasswordController;
 
@@ -64,11 +65,23 @@ Route::middleware(['auth', 'verified', 'distributor'])->group(function () {
     Route::get('/distributor/notifications', [DistributorController::class, 'notifications'])->name('distributor.notifications');
     Route::get('/distributor/warehouse-inventory', [DistributorController::class, 'warehouseInventory'])->name('distributor.warehouse-inventory');
     Route::post('/distributor/warehouse-inventory/{product}/restock', [DistributorController::class, 'restock'])->name('distributor.warehouse-inventory.restock');
+    
+    // Distributor complaint routes
+    Route::get('/distributor/complaints', [ComplaintController::class, 'distributorIndex'])->name('distributor.complaints.index');
+    Route::get('/distributor/complaints/{complaint}', [ComplaintController::class, 'distributorShow'])->name('distributor.complaints.show');
+    Route::post('/distributor/complaints/{complaint}/approve', [ComplaintController::class, 'distributorApprove'])->name('distributor.complaints.approve');
+    Route::post('/distributor/complaints/{complaint}/reject', [ComplaintController::class, 'distributorReject'])->name('distributor.complaints.reject');
+    Route::post('/distributor/complaints/{complaint}/mark-pending', [ComplaintController::class, 'distributorMarkPending'])->name('distributor.complaints.mark-pending');
 });
 
 // Retailer inventory routes
 Route::middleware(['auth', 'verified', 'retailer'])->group(function () {
     Route::get('/retailer/inventory', [RetailerInventoryController::class, 'index'])->name('retailer.inventory');
+    
+    // Retailer complaint routes
+    Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
+    Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
+    Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints.index');
 });
 
 Route::middleware(['auth'])->get('/quick-reorder', [QuickReorderController::class, 'index'])->name('quick-reorder');

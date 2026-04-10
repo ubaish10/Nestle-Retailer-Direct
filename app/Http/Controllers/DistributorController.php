@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Complaint;
 use App\Models\DistributorInventory;
 use App\Models\Order;
 use App\Models\Product;
@@ -19,18 +20,40 @@ class DistributorController extends Controller
     {
         $user = auth()->user();
         $distributorProfile = $user->distributorProfile;
+        $distributorId = $user->id;
 
         // Get quick stats
         $stats = [
-            'pending_orders' => Order::where('status', 'pending')->count(),
+            'pending_orders' => Order::where('distributor_id', $distributorId)->where('status', 'pending')->count(),
             'total_retailers' => User::where('role', 'retailer')->count(),
-            'in_transit' => Order::where('status', 'in_transit')->count(),
+            'in_transit' => Order::where('distributor_id', $distributorId)->where('status', 'in_transit')->count(),
+            'pending_complaints' => Complaint::where('distributor_id', $distributorId)->where('status', 'pending')->count(),
         ];
+
+        // Get recent pending complaints for cards
+        $recentComplaints = Complaint::with(['user', 'order'])
+            ->where('distributor_id', $distributorId)
+            ->where('status', 'pending')
+            ->latest()
+            ->limit(6)
+            ->get()
+            ->map(function ($complaint) {
+                return [
+                    'id' => $complaint->id,
+                    'complaint_id' => $complaint->complaint_id,
+                    'product_name' => $complaint->product_name,
+                    'product_image' => $complaint->product_image,
+                    'quantity' => (int) $complaint->quantity,
+                    'retailer_name' => $complaint->user->name ?? 'N/A',
+                    'created_at' => $complaint->created_at->format('M d, Y'),
+                ];
+            })->toArray();
 
         return inertia('distributor-home', [
             'name' => $user->name,
             'companyName' => $distributorProfile?->company_name ?? 'Distributor',
             'stats' => $stats,
+            'recentComplaints' => $recentComplaints,
         ]);
     }
 
