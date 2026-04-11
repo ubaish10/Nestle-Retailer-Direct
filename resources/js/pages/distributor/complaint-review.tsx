@@ -20,15 +20,23 @@ interface Order {
     items: OrderItem[];
 }
 
+interface ComplaintItem {
+    id: number;
+    product_id: number | null;
+    product_name: string;
+    product_image: string | null;
+    quantity: number;
+    proof_image_path: string | null;
+}
+
 interface Complaint {
     id: number;
     complaint_id: string;
     status: string;
+    items: ComplaintItem[];
     product_name: string;
-    product_image: string | null;
     quantity: number;
     description: string;
-    image_path: string | null;
     distributor_response: string | null;
     created_at: string;
     resolved_at: string | null;
@@ -182,38 +190,73 @@ export default function DistributorComplaintReview({ complaint }: Props) {
 
                     {/* Product Details */}
                     <div className="bg-white rounded-xl p-6 border border-slate-200/50">
-                        <h2 className="text-lg font-bold text-slate-900 mb-4">Product Details</h2>
-                        <div className="flex flex-col md:flex-row gap-6">
-                            <div className="w-full md:w-48 h-48 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                {complaint.product_image ? (
-                                    <img
-                                        src={complaint.product_image}
-                                        alt={complaint.product_name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <Package className="h-20 w-20 text-slate-400" />
-                                )}
-                            </div>
-                            <div className="flex-1 space-y-4">
-                                <div>
-                                    <p className="text-sm text-slate-500 mb-1">Product Name</p>
-                                    <p className="text-lg font-bold text-slate-900">{complaint.product_name}</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-sm text-slate-500 mb-1">Quantity Affected</p>
-                                        <p className="text-lg font-bold text-slate-900">{complaint.quantity} units</p>
+                        <h2 className="text-lg font-bold text-slate-900 mb-4">Damaged Products ({complaint.items.length})</h2>
+                        <div className="space-y-4">
+                            {complaint.items.map((item, idx) => (
+                                <div key={item.id} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                                    <div className="flex flex-col md:flex-row md:items-start gap-4">
+                                        <div className="w-24 h-24 rounded-lg bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200">
+                                            {item.product_image ? (
+                                                <img
+                                                    src={item.product_image}
+                                                    alt={item.product_name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <Package className="h-10 w-10 text-slate-400" />
+                                            )}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div>
+                                                <p className="text-xs text-slate-500">Product Name</p>
+                                                <p className="text-base font-bold text-slate-900">{item.product_name}</p>
+                                            </div>
+                                            <div className="mt-2">
+                                                <p className="text-xs text-slate-500">Quantity Affected</p>
+                                                <p className="text-base font-bold text-slate-900">{item.quantity} units</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-sm text-slate-500 mb-1">Submitted On</p>
-                                        <p className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                                            <Calendar className="h-4 w-4" />
-                                            {complaint.created_at}
-                                        </p>
-                                    </div>
+                                    {item.proof_image_path ? (
+                                        <div className="mt-3 pt-3 border-t border-slate-200">
+                                            <p className="text-xs font-semibold text-slate-700 mb-2">Proof Image:</p>
+                                            <div className="rounded-lg overflow-hidden bg-white border border-slate-200">
+                                                <img
+                                                    src={item.proof_image_path}
+                                                    alt={`Proof for ${item.product_name}`}
+                                                    className="w-full h-auto max-h-64 object-contain"
+                                                    onError={(e) => {
+                                                        const target = e.currentTarget;
+                                                        target.style.display = 'none';
+                                                        const parent = target.parentElement;
+                                                        if (parent) {
+                                                            parent.innerHTML = `
+                                                                <div class="flex flex-col items-center justify-center p-8 text-slate-400">
+                                                                    <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                                    </svg>
+                                                                    <p class="text-sm">Unable to load image</p>
+                                                                    <p class="text-xs mt-1">Path: ${item.proof_image_path}</p>
+                                                                </div>
+                                                            `;
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-3 pt-3 border-t border-slate-200">
+                                            <p className="text-xs font-semibold text-slate-700 mb-2">Proof Image:</p>
+                                            <div className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                                                <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                </svg>
+                                                <p className="text-xs text-slate-500">No proof image uploaded for this product</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
+                            ))}
                         </div>
                     </div>
 
@@ -223,51 +266,6 @@ export default function DistributorComplaintReview({ complaint }: Props) {
                         <div className="bg-slate-50 rounded-lg p-4">
                             <p className="text-sm text-slate-700 whitespace-pre-wrap">{complaint.description}</p>
                         </div>
-                    </div>
-
-                    {/* Proof Image */}
-                    <div className="bg-white rounded-xl p-6 border border-slate-200/50">
-                        <h2 className="text-lg font-bold text-slate-900 mb-4">Proof Image</h2>
-                        {complaint.image_path ? (
-                            <div className="space-y-3">
-                                <div className="rounded-lg overflow-hidden bg-slate-100 border-2 border-dashed border-slate-200">
-                                    <img
-                                        src={complaint.image_path}
-                                        alt="Proof of damage"
-                                        className="w-full h-auto max-h-96 object-contain"
-                                        onError={(e) => {
-                                            console.error('Failed to load proof image:', complaint.image_path);
-                                            const target = e.currentTarget;
-                                            target.style.display = 'none';
-                                            const parent = target.parentElement;
-                                            if (parent) {
-                                                parent.innerHTML = '';
-                                                const placeholder = document.createElement('div');
-                                                placeholder.className = 'flex flex-col items-center justify-center p-12 text-slate-400';
-                                                placeholder.innerHTML = `
-                                                    <svg class="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                    </svg>
-                                                    <p class="text-sm font-medium">Unable to load image</p>
-                                                    <p class="text-xs mt-1">The image file may have been deleted</p>
-                                                `;
-                                                parent.appendChild(placeholder);
-                                            }
-                                        }}
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded">
-                                    <Package className="h-3 w-3" />
-                                    <span>Image path: {complaint.image_path}</span>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center p-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
-                                <ImageOff className="h-16 w-16 text-slate-300 mb-3" />
-                                <p className="text-sm font-medium text-slate-500">No proof image uploaded</p>
-                                <p className="text-xs text-slate-400 mt-1">The retailer did not upload an image with this complaint</p>
-                            </div>
-                        )}
                     </div>
 
                     {/* Order Details */}
@@ -285,7 +283,7 @@ export default function DistributorComplaintReview({ complaint }: Props) {
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-slate-500">Total Amount</span>
-                                    <span className="font-semibold text-slate-900">${complaint.order.total_amount.toFixed(2)}</span>
+                                    <span className="font-semibold text-slate-900">LKR {complaint.order.total_amount.toFixed(2)}</span>
                                 </div>
                                 <div className="border-t border-slate-200 pt-3">
                                     <p className="text-xs font-semibold text-slate-700 mb-2">Order Items:</p>
@@ -293,7 +291,7 @@ export default function DistributorComplaintReview({ complaint }: Props) {
                                         {complaint.order.items.map((item, index) => (
                                             <div key={index} className="flex justify-between text-sm">
                                                 <span className="text-slate-600">{item.product_name} x{item.quantity}</span>
-                                                <span className="font-semibold text-slate-900">${(item.price * item.quantity).toFixed(2)}</span>
+                                                <span className="font-semibold text-slate-900">LKR {(item.price * item.quantity).toFixed(2)}</span>
                                             </div>
                                         ))}
                                     </div>

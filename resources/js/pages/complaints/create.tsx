@@ -1,7 +1,7 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronRight, Plus, Upload, Package, Calendar, DollarSign } from 'lucide-react';
+import { ChevronRight, Plus, Upload, Package, Calendar, DollarSign, Trash2, X } from 'lucide-react';
 
 interface Order {
     id: number;
@@ -19,6 +19,17 @@ interface Order {
     }>;
 }
 
+interface ComplaintProduct {
+    id: string; // Temporary ID for UI
+    product_id: number | null;
+    product_name: string;
+    product_image: string | null;
+    quantity: string;
+    proof_image: File | null;
+    proof_image_preview: string | null;
+    max_quantity: number;
+}
+
 interface PageProps {
     orders: Order[];
     [key: string]: any;
@@ -27,44 +38,78 @@ interface PageProps {
 export default function CreateComplaint({ orders }: PageProps) {
     const { toast } = useToast();
     const { flash } = usePage().props;
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
 
     const [selectedOrderId, setSelectedOrderId] = useState('');
-    const [selectedProduct, setSelectedProduct] = useState<any>(null);
-    const [quantity, setQuantity] = useState('1');
+    const [complaintProducts, setComplaintProducts] = useState<ComplaintProduct[]>([]);
     const [description, setDescription] = useState('');
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    useEffect(() => {
-        if (flash?.success) {
-            toast({ title: 'Success', description: flash.success });
-        }
-        if (flash?.error) {
-            toast({ title: 'Error', description: flash.error, variant: 'destructive' });
-        }
-    }, [flash]);
-
     const selectedOrder = orders.find((o) => o.id.toString() === selectedOrderId);
-    const orderProducts = selectedOrder?.items.map((item) => ({
-        id: item.id,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        product_image: item.product_image,
-        quantity: item.quantity,
-    })) || [];
+    const orderProducts = selectedOrder?.items || [];
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const addProduct = () => {
+        const newProduct: ComplaintProduct = {
+            id: `temp_${Date.now()}_${Math.random()}`,
+            product_id: null,
+            product_name: '',
+            product_image: null,
+            quantity: '1',
+            proof_image: null,
+            proof_image_preview: null,
+            max_quantity: 0,
+        };
+        setComplaintProducts([...complaintProducts, newProduct]);
+    };
+
+    const removeProduct = (id: string) => {
+        setComplaintProducts(complaintProducts.filter(p => p.id !== id));
+    };
+
+    const updateProduct = (id: string, field: keyof ComplaintProduct, value: any) => {
+        setComplaintProducts(complaintProducts.map(p => {
+            if (p.id === id) {
+                const updated = { ...p, [field]: value };
+                
+                // If product selection changed, update max_quantity and product details
+                if (field === 'product_id' && value) {
+                    const orderProduct = orderProducts.find(op => op.product_id === parseInt(value));
+                    if (orderProduct) {
+                        updated.product_name = orderProduct.product_name;
+                        updated.product_image = orderProduct.product_image;
+                        updated.max_quantity = orderProduct.quantity;
+                        updated.quantity = Math.min(parseInt(p.quantity) || 1, orderProduct.quantity).toString();
+                    }
+                }
+                
+                return updated;
+            }
+            return p;
+        }));
+    };
+
+    const handleImageChange = (productId: string, e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             if (file.size > 2 * 1024 * 1024) {
                 toast({ title: 'File too large', description: 'Image size must not exceed 2MB.', variant: 'destructive' });
                 return;
             }
-            setImageFile(file);
+
             const reader = new FileReader();
-            reader.onloadend = () => setImagePreview(reader.result as string);
+            reader.onloadend = () => {
+                // Update both fields at once to avoid race condition
+                setComplaintProducts(complaintProducts.map(p => {
+                    if (p.id === productId) {
+                        return {
+                            ...p,
+                            proof_image: file,
+                            proof_image_preview: reader.result as string,
+                        };
+                    }
+                    return p;
+                }));
+            };
             reader.readAsDataURL(file);
         }
     };
@@ -76,9 +121,26 @@ export default function CreateComplaint({ orders }: PageProps) {
             toast({ title: 'Validation Error', description: 'Please select an order.', variant: 'destructive' });
             return;
         }
-        if (!selectedProduct) {
-            toast({ title: 'Validation Error', description: 'Please select a product.', variant: 'destructive' });
+        if (complaintProducts.length === 0) {
+            toast({ title: 'Validation Error', description: 'Please add at least one product.', variant: 'destructive' });
             return;
+        }
+        
+        // Validate all products
+        for (let i = 0; i < complaintProducts.length; i++) {
+            const product = complaintProducts[i];
+            if (!product.product_id) {
+                toast({ title: 'Validation Error', description: `Please select a product for item #${i + 1}.`, variant: 'destructive' });
+                return;
+            }
+            if (!product.quantity || parseInt(product.quantity) < 1) {
+                toast({ title: 'Validation Error', description: `Please enter a valid quantity for ${product.product_name}.`, variant: 'destructive' });
+                return;
+            }
+            if (parseInt(product.quantity) > product.max_quantity) {
+                toast({ title: 'Validation Error', description: `Quantity for ${product.product_name} cannot exceed ${product.max_quantity}.`, variant: 'destructive' });
+                return;
+            }
         }
         if (!description.trim()) {
             toast({ title: 'Validation Error', description: 'Please provide a description of the damage.', variant: 'destructive' });
@@ -88,18 +150,41 @@ export default function CreateComplaint({ orders }: PageProps) {
         setIsSubmitting(true);
         const formData = new FormData();
         formData.append('order_id', selectedOrderId);
-        formData.append('product_id', selectedProduct.product_id?.toString() || '');
-        formData.append('product_name', selectedProduct.product_name);
-        formData.append('product_image', selectedProduct.product_image || '');
-        formData.append('quantity', quantity);
         formData.append('description', description);
-        if (imageFile) {
-            formData.append('image', imageFile);
-        }
 
-        router.post('/complaints', formData as any, {
+        // Use flat structure for better file upload support
+        complaintProducts.forEach((product, index) => {
+            formData.append(`products[${index}][product_id]`, product.product_id?.toString() || '');
+            formData.append(`products[${index}][product_name]`, product.product_name);
+            formData.append(`products[${index}][product_image]`, product.product_image || '');
+            formData.append(`products[${index}][quantity]`, product.quantity);
+            if (product.proof_image) {
+                formData.append(`products[${index}][proof_image]`, product.proof_image);
+            }
+        });
+
+        // Use Inertia router with forceFormData
+        router.post('/complaints', formData, {
             forceFormData: true,
-            onFinish: () => setIsSubmitting(false),
+            preserveScroll: true,
+            onSuccess: () => {
+                // Success redirect with flash message will handle showing toast
+                console.log('Complaint submitted successfully');
+            },
+            onError: (errors) => {
+                console.error('Validation errors:', errors);
+                const firstError = Object.values(errors)[0];
+                if (firstError) {
+                    toast({ 
+                        title: 'Validation Error', 
+                        description: firstError as string, 
+                        variant: 'destructive' 
+                    });
+                }
+            },
+            onFinish: () => {
+                setIsSubmitting(false);
+            },
         });
     };
 
@@ -167,7 +252,7 @@ export default function CreateComplaint({ orders }: PageProps) {
                                                     <DollarSign className="h-3.5 w-3.5 md:h-4 md:w-4 text-white" />
                                                 </div>
                                             </div>
-                                            <div className="text-lg md:text-xl font-bold bg-gradient-to-br from-emerald-600 to-emerald-500 bg-clip-text text-transparent">${selectedOrder.total_amount.toFixed(2)}</div>
+                                            <div className="text-lg md:text-xl font-bold bg-gradient-to-br from-emerald-600 to-emerald-500 bg-clip-text text-transparent">LKR {selectedOrder.total_amount.toFixed(2)}</div>
                                         </div>
                                         <div>
                                             <div className="flex items-center justify-between mb-2">
@@ -193,13 +278,13 @@ export default function CreateComplaint({ orders }: PageProps) {
                             </label>
                             <select
                                 value={selectedOrderId}
-                                onChange={(e) => { setSelectedOrderId(e.target.value); setSelectedProduct(null); }}
+                                onChange={(e) => { setSelectedOrderId(e.target.value); setComplaintProducts([]); }}
                                 className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00447C] focus:border-transparent transition-all"
                             >
                                 <option value="">Choose an order to complain about</option>
                                 {orders.map((order) => (
                                     <option key={order.id} value={order.id}>
-                                        Order #{order.id} - {order.created_at} - ${order.total_amount.toFixed(2)} ({order.distributor_name})
+                                        Order #{order.id} - {order.created_at} - LKR {order.total_amount.toFixed(2)} ({order.distributor_name})
                                     </option>
                                 ))}
                             </select>
@@ -212,78 +297,129 @@ export default function CreateComplaint({ orders }: PageProps) {
                             )}
                         </div>
 
-                        {/* Select Product */}
+                        {/* Damaged Products */}
                         {selectedOrder && (
-                            <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 border border-slate-200/50 shadow-sm">
-                                <label className="block text-sm font-bold text-slate-900 mb-3">
-                                    Select Damaged Product <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={selectedProduct?.id || ''}
-                                    onChange={(e) => {
-                                        const product = orderProducts.find((p) => p.id.toString() === e.target.value);
-                                        setSelectedProduct(product);
-                                    }}
-                                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00447C] focus:border-transparent transition-all"
-                                >
-                                    <option value="">Choose a product from the order</option>
-                                    {orderProducts.map((product) => (
-                                        <option key={product.id} value={product.id}>
-                                            {product.product_name} (Ordered Qty: {product.quantity})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
+                            <>
+                                <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 border border-slate-200/50 shadow-sm">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <label className="block text-sm font-bold text-slate-900">
+                                            Damaged Products <span className="text-red-500">*</span>
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={addProduct}
+                                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#00447C] to-[#005a9e] text-white text-sm font-semibold rounded-lg hover:from-[#003366] hover:to-[#004a8c] transition-all"
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                            Add Product
+                                        </button>
+                                    </div>
 
-                        {/* Quantity and Description */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                            {/* Quantity */}
-                            <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 border border-slate-200/50 shadow-sm">
-                                <label className="block text-sm font-bold text-slate-900 mb-3">
-                                    Quantity Affected <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max={selectedProduct?.quantity || 999}
-                                    value={quantity}
-                                    onChange={(e) => setQuantity(e.target.value)}
-                                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00447C] focus:border-transparent transition-all"
-                                    placeholder="Enter quantity"
-                                />
-                                {selectedProduct && (
-                                    <p className="mt-2 text-xs text-slate-500">
-                                        Maximum: {selectedProduct.quantity} units from this order
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Image Upload */}
-                            <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 border border-slate-200/50 shadow-sm">
-                                <label className="block text-sm font-bold text-slate-900 mb-3">
-                                    Upload Proof Image
-                                </label>
-                                <div
-                                    className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center cursor-pointer hover:border-[#00447C] transition-colors"
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
-                                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                                    {imagePreview ? (
-                                        <div>
-                                            <img src={imagePreview} alt="Preview" className="mx-auto max-h-40 rounded-lg object-contain mb-3" />
-                                            <p className="text-xs text-slate-500">Click to change image</p>
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            <Upload className="mx-auto h-10 w-10 text-slate-400 mb-2" />
-                                            <p className="text-sm font-medium text-slate-700">Click to upload</p>
-                                            <p className="text-xs text-slate-500 mt-1">PNG, JPG up to 2MB</p>
+                                    {complaintProducts.length === 0 && (
+                                        <div className="text-center py-8 border-2 border-dashed border-slate-300 rounded-lg">
+                                            <Package className="mx-auto h-12 w-12 text-slate-400 mb-2" />
+                                            <p className="text-sm text-slate-500">No products added yet</p>
+                                            <p className="text-xs text-slate-400 mt-1">Click "Add Product" to start</p>
                                         </div>
                                     )}
+
+                                    <div className="space-y-4">
+                                        {complaintProducts.map((product, index) => (
+                                            <div key={product.id} className="relative bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                                {/* Remove Button */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeProduct(product.id)}
+                                                    className="absolute top-3 right-3 p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition-colors"
+                                                >
+                                                    <X className="h-4 w-4 text-red-600" />
+                                                </button>
+
+                                                <div className="pr-8">
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00447C] to-[#005a9e] flex items-center justify-center">
+                                                            <span className="text-xs font-bold text-white">{index + 1}</span>
+                                                        </div>
+                                                        <h4 className="text-sm font-bold text-slate-900">Product #{index + 1}</h4>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                        {/* Product Selection */}
+                                                        <div>
+                                                            <label className="block text-xs font-semibold text-slate-700 mb-2">
+                                                                Product <span className="text-red-500">*</span>
+                                                            </label>
+                                                            <select
+                                                                value={product.product_id || ''}
+                                                                onChange={(e) => updateProduct(product.id, 'product_id', e.target.value)}
+                                                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00447C] focus:border-transparent transition-all"
+                                                            >
+                                                                <option value="">Select a product</option>
+                                                                {orderProducts
+                                                                    .filter(op => !complaintProducts.some(cp => cp.product_id === op.product_id && cp.id !== product.id))
+                                                                    .map((op) => (
+                                                                        <option key={op.product_id} value={op.product_id}>
+                                                                            {op.product_name} (Qty: {op.quantity})
+                                                                        </option>
+                                                                    ))}
+                                                            </select>
+                                                        </div>
+
+                                                        {/* Quantity */}
+                                                        <div>
+                                                            <label className="block text-xs font-semibold text-slate-700 mb-2">
+                                                                Quantity <span className="text-red-500">*</span>
+                                                            </label>
+                                                            <input
+                                                                type="number"
+                                                                min="1"
+                                                                max={product.max_quantity || 999}
+                                                                value={product.quantity}
+                                                                onChange={(e) => updateProduct(product.id, 'quantity', e.target.value)}
+                                                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00447C] focus:border-transparent transition-all"
+                                                                placeholder="Qty"
+                                                            />
+                                                            {product.max_quantity > 0 && (
+                                                                <p className="mt-1 text-[10px] text-slate-500">
+                                                                    Max: {product.max_quantity}
+                                                                </p>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Proof Image */}
+                                                        <div>
+                                                            <label className="block text-xs font-semibold text-slate-700 mb-2">
+                                                                Proof Image
+                                                            </label>
+                                                            <div
+                                                                className="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center cursor-pointer hover:border-[#00447C] transition-colors h-[78px] flex items-center justify-center"
+                                                                onClick={() => fileInputRefs.current[product.id]?.click()}
+                                                            >
+                                                                <input
+                                                                    ref={(el) => { fileInputRefs.current[product.id] = el; }}
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={(e) => handleImageChange(product.id, e)}
+                                                                    className="hidden"
+                                                                />
+                                                                {product.proof_image_preview ? (
+                                                                    <img src={product.proof_image_preview} alt="Preview" className="max-h-16 mx-auto rounded object-contain" />
+                                                                ) : (
+                                                                    <div>
+                                                                        <Upload className="mx-auto h-5 w-5 text-slate-400" />
+                                                                        <p className="text-[10px] text-slate-500 mt-1">Upload</p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            </>
+                        )}
 
                         {/* Description */}
                         <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 border border-slate-200/50 shadow-sm">
@@ -313,7 +449,7 @@ export default function CreateComplaint({ orders }: PageProps) {
                             className="w-full bg-gradient-to-r from-[#00447C] to-[#005a9e] text-white font-semibold py-4 px-6 rounded-xl hover:from-[#003366] hover:to-[#004a8c] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 text-base"
                         >
                             <Plus className="h-5 w-5" />
-                            {isSubmitting ? 'Submitting Complaint...' : 'Submit Complaint'}
+                            {isSubmitting ? 'Submitting Complaint...' : `Submit Complaint (${complaintProducts.length} product${complaintProducts.length !== 1 ? 's' : ''})`}
                         </button>
                     </form>
                 </main>

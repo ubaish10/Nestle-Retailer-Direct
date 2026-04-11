@@ -57,6 +57,11 @@ class Complaint extends Model
         return $this->belongsTo(User::class, 'distributor_id');
     }
 
+    public function items()
+    {
+        return $this->hasMany(ComplaintItem::class);
+    }
+
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
@@ -72,7 +77,7 @@ class Complaint extends Model
         return $query->where('status', 'rejected');
     }
 
-    public function approve(string $response = null): void
+    public function approve(?string $response = null): void
     {
         $this->update([
             'status' => 'approved',

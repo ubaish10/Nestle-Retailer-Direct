@@ -4,15 +4,23 @@ import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
+interface ComplaintItem {
+    id: number;
+    product_id: number | null;
+    product_name: string;
+    product_image: string | null;
+    quantity: number;
+    proof_image_path: string | null;
+}
+
 interface Complaint {
     id: number;
     complaint_id: string;
     status: string;
+    items: ComplaintItem[];
     product_name: string;
-    product_image: string | null;
     quantity: number;
     description: string;
-    image_path: string | null;
     distributor_response: string | null;
     created_at: string;
     resolved_at: string | null;
@@ -196,15 +204,24 @@ export default function DistributorComplaints({ complaints, stats }: Props) {
                                 className="bg-white/60 backdrop-blur-sm border border-slate-200/50 rounded-xl p-4 md:p-6 hover:shadow-md transition-shadow"
                             >
                                 <div className="flex flex-col md:flex-row md:items-start gap-4">
-                                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                        {complaint.product_image ? (
-                                            <img
-                                                src={complaint.product_image}
-                                                alt={complaint.product_name}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <Package className="h-10 w-10 text-slate-400" />
+                                    <div className="flex flex-wrap gap-2 md:flex-col flex-shrink-0">
+                                        {complaint.items.slice(0, 3).map((item, idx) => (
+                                            <div key={idx} className="w-16 h-16 md:w-20 md:h-20 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
+                                                {item.product_image ? (
+                                                    <img
+                                                        src={item.product_image}
+                                                        alt={item.product_name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <Package className="h-8 w-8 text-slate-400" />
+                                                )}
+                                            </div>
+                                        ))}
+                                        {complaint.items.length > 3 && (
+                                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg bg-slate-200 flex items-center justify-center border-2 border-white shadow-sm">
+                                                <span className="text-xs font-bold text-slate-600">+{complaint.items.length - 3}</span>
+                                            </div>
                                         )}
                                     </div>
 

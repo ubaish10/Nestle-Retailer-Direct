@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Complaint;
+use App\Models\ComplaintItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -53,23 +55,40 @@ class ComplaintController extends Controller
      */
     public function store(Request $request)
     {
+        // Log all incoming data for debugging
+        \Log::info('=== COMPLAINT SUBMISSION DEBUG ===');
+        \Log::info('Request data keys:', array_keys($request->all()));
+        \Log::info('Has files:', array_keys($request->allFiles()));
+        
+        // Log each product's proof_image field
+        if ($request->has('products')) {
+            $products = $request->input('products');
+            foreach ($products as $index => $product) {
+                $hasFile = $request->hasFile("products.{$index}.proof_image") ? 'YES' : 'NO';
+                \Log::info("Product {$index} - hasFile: {$hasFile}");
+            }
+        }
+        
         $validated = $request->validate([
             'order_id' => 'required|integer|exists:orders,id',
-            'product_id' => 'nullable|integer|exists:products,id',
-            'product_name' => 'required|string',
-            'product_image' => 'nullable|string',
-            'quantity' => 'required|integer|min:1',
+            'products' => 'required|array|min:1',
+            'products.*.product_id' => 'nullable|integer|exists:products,id',
+            'products.*.product_name' => 'required|string',
+            'products.*.product_image' => 'nullable|string',
+            'products.*.quantity' => 'required|integer|min:1',
             'description' => 'required|string|max:1000',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'products.*.proof_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ], [
             'order_id.required' => 'Please select an order.',
-            'product_name.required' => 'Please select a product.',
-            'quantity.required' => 'Please enter the quantity affected.',
-            'quantity.min' => 'Quantity must be at least 1.',
+            'products.required' => 'Please select at least one product.',
+            'products.min' => 'Please select at least one product.',
+            'products.*.product_name.required' => 'Product name is required.',
+            'products.*.quantity.required' => 'Quantity is required for all products.',
+            'products.*.quantity.min' => 'Quantity must be at least 1 for all products.',
             'description.required' => 'Please provide a description of the damage.',
             'description.max' => 'Description must not exceed 1000 characters.',
-            'image.image' => 'Please upload a valid image file.',
-            'image.max' => 'Image size must not exceed 2MB.',
+            'products.*.proof_image.image' => 'Please upload valid image files for proof.',
+            'products.*.proof_image.max' => 'Each image size must not exceed 2MB.',
         ]);
 
         // Verify the order belongs to the authenticated user
@@ -77,26 +96,54 @@ class ComplaintController extends Controller
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('complaints', 'public');
+        DB::beginTransaction();
+
+        try {
+            $complaint = Complaint::create([
+                'user_id' => Auth::id(),
+                'order_id' => $validated['order_id'],
+                'product_name' => count($validated['products']) . ' products',
+                'quantity' => array_sum(array_column($validated['products'], 'quantity')),
+                'description' => $validated['description'],
+                'status' => 'pending',
+                'distributor_id' => $order->distributor_id,
+            ]);
+
+            // Create complaint items with their proof images
+            foreach ($validated['products'] as $index => $product) {
+                $proofImagePath = null;
+
+                // Check if proof_image file was uploaded
+                if ($request->hasFile("products.{$index}.proof_image")) {
+                    $file = $request->file("products.{$index}.proof_image");
+                    $proofImagePath = $file->store('complaints/proofs', 'public');
+                    \Log::info("✓ File stored for product {$index}: {$proofImagePath}");
+                } else {
+                    \Log::warning("✗ No proof_image file uploaded for product {$index}");
+                }
+
+                $item = ComplaintItem::create([
+                    'complaint_id' => $complaint->id,
+                    'product_id' => $product['product_id'] ?? null,
+                    'product_name' => $product['product_name'],
+                    'product_image' => $product['product_image'] ?? null,
+                    'quantity' => $product['quantity'],
+                    'proof_image_path' => $proofImagePath,
+                ]);
+                
+                \Log::info("Created complaint item {$item->id} with proof_image_path: " . ($proofImagePath ?? 'NULL'));
+            }
+
+            DB::commit();
+
+            return redirect()->route('complaints.index')
+                ->with('success', 'Complaint submitted successfully! Your complaint ID is: ' . $complaint->complaint_id);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Complaint store error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            throw $e;
         }
-
-        $complaint = Complaint::create([
-            'user_id' => Auth::id(),
-            'order_id' => $validated['order_id'],
-            'product_id' => $validated['product_id'] ?? null,
-            'product_name' => $validated['product_name'],
-            'product_image' => $validated['product_image'] ?? null,
-            'quantity' => $validated['quantity'],
-            'description' => $validated['description'],
-            'image_path' => $imagePath,
-            'status' => 'pending',
-            'distributor_id' => $order->distributor_id,
-        ]);
-
-        return redirect()->route('complaints.index')
-            ->with('success', 'Complaint submitted successfully! Your complaint ID is: ' . $complaint->complaint_id);
     }
 
     /**
@@ -104,20 +151,30 @@ class ComplaintController extends Controller
      */
     public function index()
     {
-        $complaints = Complaint::with(['order.distributor', 'product'])
+        $complaints = Complaint::with(['order.distributor', 'items'])
             ->where('user_id', Auth::id())
             ->latest()
             ->get()
             ->map(function ($complaint) {
+                $items = $complaint->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product_name,
+                        'product_image' => $item->product_image,
+                        'quantity' => (int) $item->quantity,
+                        'proof_image_path' => $item->proof_image_path ? Storage::url($item->proof_image_path) : null,
+                    ];
+                })->toArray();
+
                 return [
                     'id' => $complaint->id,
                     'complaint_id' => $complaint->complaint_id,
                     'status' => $complaint->status,
+                    'items' => $items,
                     'product_name' => $complaint->product_name,
-                    'product_image' => $complaint->product_image,
                     'quantity' => (int) $complaint->quantity,
                     'description' => $complaint->description,
-                    'image_path' => $complaint->image_path ? Storage::url($complaint->image_path) : null,
                     'distributor_response' => $complaint->distributor_response,
                     'created_at' => $complaint->created_at->format('M d, Y'),
                     'resolved_at' => $complaint->resolved_at ? $complaint->resolved_at->format('M d, Y') : null,
@@ -144,20 +201,30 @@ class ComplaintController extends Controller
      */
     public function distributorIndex()
     {
-        $complaints = Complaint::with(['user', 'order', 'product'])
+        $complaints = Complaint::with(['user', 'order', 'items'])
             ->where('distributor_id', Auth::id())
             ->latest()
             ->get()
             ->map(function ($complaint) {
+                $items = $complaint->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product_name,
+                        'product_image' => $item->product_image,
+                        'quantity' => (int) $item->quantity,
+                        'proof_image_path' => $item->proof_image_path ? Storage::url($item->proof_image_path) : null,
+                    ];
+                })->toArray();
+
                 return [
                     'id' => $complaint->id,
                     'complaint_id' => $complaint->complaint_id,
                     'status' => $complaint->status,
+                    'items' => $items,
                     'product_name' => $complaint->product_name,
-                    'product_image' => $complaint->product_image,
                     'quantity' => (int) $complaint->quantity,
                     'description' => $complaint->description,
-                    'image_path' => $complaint->image_path ? Storage::url($complaint->image_path) : null,
                     'distributor_response' => $complaint->distributor_response,
                     'created_at' => $complaint->created_at->format('M d, Y'),
                     'resolved_at' => $complaint->resolved_at ? $complaint->resolved_at->format('M d, Y') : null,
@@ -190,17 +257,25 @@ class ComplaintController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $complaint->load(['user', 'order', 'order.items', 'product']);
+        $complaint->load(['user', 'order', 'order.items', 'items']);
 
         $complaintData = [
             'id' => $complaint->id,
             'complaint_id' => $complaint->complaint_id,
             'status' => $complaint->status,
+            'items' => $complaint->items->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product_name,
+                    'product_image' => $item->product_image,
+                    'quantity' => (int) $item->quantity,
+                    'proof_image_path' => $item->proof_image_path ? Storage::url($item->proof_image_path) : null,
+                ];
+            })->toArray(),
             'product_name' => $complaint->product_name,
-            'product_image' => $complaint->product_image,
             'quantity' => (int) $complaint->quantity,
             'description' => $complaint->description,
-            'image_path' => $complaint->image_path ? Storage::url($complaint->image_path) : null,
             'distributor_response' => $complaint->distributor_response,
             'created_at' => $complaint->created_at->format('M d, Y H:i'),
             'resolved_at' => $complaint->resolved_at ? $complaint->resolved_at->format('M d, Y H:i') : null,

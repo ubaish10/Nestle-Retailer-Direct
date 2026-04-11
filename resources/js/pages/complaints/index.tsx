@@ -5,15 +5,23 @@ import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
+interface ComplaintItem {
+    id: number;
+    product_id: number | null;
+    product_name: string;
+    product_image: string | null;
+    quantity: number;
+    proof_image_path: string | null;
+}
+
 interface Complaint {
     id: number;
     complaint_id: string;
     status: string;
+    items: ComplaintItem[];
     product_name: string;
-    product_image: string | null;
     quantity: number;
     description: string;
-    image_path: string | null;
     distributor_response: string | null;
     created_at: string;
     resolved_at: string | null;
@@ -224,16 +232,25 @@ export default function ComplaintIndex({ complaints, stats }: Props) {
                                 className="bg-white/60 backdrop-blur-sm border border-slate-200/50 rounded-xl p-4 md:p-6 hover:shadow-md transition-shadow"
                             >
                                 <div className="flex flex-col md:flex-row md:items-start gap-4">
-                                    {/* Product Image */}
-                                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                        {complaint.product_image ? (
-                                            <img
-                                                src={complaint.product_image}
-                                                alt={complaint.product_name}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <Package className="h-10 w-10 text-slate-400" />
+                                    {/* Products List */}
+                                    <div className="flex flex-wrap gap-2 md:flex-col flex-shrink-0">
+                                        {complaint.items.slice(0, 3).map((item, idx) => (
+                                            <div key={idx} className="w-16 h-16 md:w-20 md:h-20 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
+                                                {item.product_image ? (
+                                                    <img
+                                                        src={item.product_image}
+                                                        alt={item.product_name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <Package className="h-8 w-8 text-slate-400" />
+                                                )}
+                                            </div>
+                                        ))}
+                                        {complaint.items.length > 3 && (
+                                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg bg-slate-200 flex items-center justify-center border-2 border-white shadow-sm">
+                                                <span className="text-xs font-bold text-slate-600">+{complaint.items.length - 3}</span>
+                                            </div>
                                         )}
                                     </div>
 
@@ -354,35 +371,66 @@ export default function ComplaintIndex({ complaints, stats }: Props) {
 
                             {/* Product Details */}
                             <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/50">
-                                <h3 className="text-sm font-bold text-slate-900 mb-3">Product Details</h3>
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <div className="w-24 h-24 rounded-lg bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200">
-                                        {selectedComplaint.product_image ? (
-                                            <img
-                                                src={selectedComplaint.product_image}
-                                                alt={selectedComplaint.product_name}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <Package className="h-10 w-10 text-slate-400" />
-                                        )}
-                                    </div>
-                                    <div className="flex-1 space-y-2">
-                                        <div>
-                                            <p className="text-xs text-slate-500">Product Name</p>
-                                            <p className="font-semibold text-slate-900">{selectedComplaint.product_name}</p>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <p className="text-xs text-slate-500">Quantity Affected</p>
-                                                <p className="font-semibold text-slate-900">{selectedComplaint.quantity} units</p>
+                                <h3 className="text-sm font-bold text-slate-900 mb-3">Products ({selectedComplaint.items.length})</h3>
+                                <div className="space-y-3">
+                                    {selectedComplaint.items.map((item, idx) => (
+                                        <div key={item.id} className="bg-white rounded-lg p-3 border border-slate-200">
+                                            <div className="flex items-start gap-3 mb-2">
+                                                <div className="w-16 h-16 rounded-lg bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200">
+                                                    {item.product_image ? (
+                                                        <img
+                                                            src={item.product_image}
+                                                            alt={item.product_name}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <Package className="h-8 w-8 text-slate-400" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-semibold text-slate-900">{item.product_name}</p>
+                                                    <p className="text-xs text-slate-500">Quantity: {item.quantity} units</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-xs text-slate-500">Distributor</p>
-                                                <p className="font-semibold text-slate-900">{selectedComplaint.distributor_name}</p>
-                                            </div>
+                                            {item.proof_image_path ? (
+                                                <div className="mt-2">
+                                                    <p className="text-xs font-medium text-slate-700 mb-1">Proof Image:</p>
+                                                    <div className="rounded-lg overflow-hidden bg-slate-50 border border-slate-200">
+                                                        <img
+                                                            src={item.proof_image_path}
+                                                            alt={`Proof for ${item.product_name}`}
+                                                            className="w-full h-auto max-h-40 object-contain"
+                                                            onError={(e) => {
+                                                                const target = e.currentTarget;
+                                                                target.style.display = 'none';
+                                                                const parent = target.parentElement;
+                                                                if (parent) {
+                                                                    parent.innerHTML = `
+                                                                        <div class="flex flex-col items-center justify-center p-6 text-slate-400">
+                                                                            <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                                            </svg>
+                                                                            <p class="text-xs">Unable to load image</p>
+                                                                        </div>
+                                                                    `;
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="mt-2">
+                                                    <p className="text-xs font-medium text-slate-700 mb-1">Proof Image:</p>
+                                                    <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                                                        <svg class="w-6 h-6 text-slate-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                        </svg>
+                                                        <p className="text-[10px] text-slate-500">No image uploaded</p>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
 
@@ -391,46 +439,6 @@ export default function ComplaintIndex({ complaints, stats }: Props) {
                                 <h3 className="text-sm font-bold text-slate-900 mb-2">Description</h3>
                                 <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedComplaint.description}</p>
                             </div>
-
-                            {/* Proof Image */}
-                            {selectedComplaint.image_path ? (
-                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/50">
-                                    <h3 className="text-sm font-bold text-slate-900 mb-3">Proof Image</h3>
-                                    <div className="rounded-lg overflow-hidden bg-white border border-slate-200">
-                                        <img
-                                            src={selectedComplaint.image_path}
-                                            alt="Proof of damage"
-                                            className="w-full h-auto max-h-64 object-contain"
-                                            onError={(e) => {
-                                                console.error('Failed to load image:', selectedComplaint.image_path);
-                                                const target = e.currentTarget;
-                                                target.style.display = 'none';
-                                                const parent = target.parentElement;
-                                                if (parent) {
-                                                    parent.innerHTML = '';
-                                                    const placeholder = document.createElement('div');
-                                                    placeholder.className = 'flex flex-col items-center justify-center p-8 text-slate-400';
-                                                    placeholder.innerHTML = `
-                                                        <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                        </svg>
-                                                        <p class="text-sm">Unable to load image</p>
-                                                    `;
-                                                    parent.appendChild(placeholder);
-                                                }
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/50">
-                                    <h3 className="text-sm font-bold text-slate-900 mb-3">Proof Image</h3>
-                                    <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg border-2 border-dashed border-slate-200">
-                                        <ImageOff className="h-10 w-10 text-slate-300 mb-2" />
-                                        <p className="text-xs text-slate-500">No proof image uploaded</p>
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Dates */}
                             <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/50">
