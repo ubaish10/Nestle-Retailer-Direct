@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import GuestLayout from '@/layouts/guest-layout';
 import {
+    AlertCircle,
     ClipboardList,
     Warehouse,
     Truck,
@@ -9,12 +10,11 @@ import {
     PackageSearch,
     Users,
     Bell,
-    AlertCircle,
 } from 'lucide-react';
 
 const distributorSections = [
     {
-        area: 'Retailer Orders',
+        area: 'Incoming Orders',
         icon: ClipboardList,
         href: '/distributor/incoming-orders',
         description: 'View incoming orders',
@@ -85,20 +85,10 @@ interface Props {
         pending_orders: number;
         total_retailers: number;
         in_transit: number;
-        pending_complaints: number;
     };
-    recentComplaints: Array<{
-        id: number;
-        complaint_id: string;
-        product_name: string;
-        product_image: string | null;
-        quantity: number;
-        retailer_name: string;
-        created_at: string;
-    }>;
 }
 
-export default function DistributorHome({ name, companyName, stats, recentComplaints }: Props) {
+export default function DistributorHome({ name, companyName, stats }: Props) {
     return (
         <GuestLayout>
             <Head title="Distributor Portal" />
@@ -108,100 +98,6 @@ export default function DistributorHome({ name, companyName, stats, recentCompla
                     <h1 className="text-xl md:text-2xl font-bold text-primary mb-1 tracking-wider">DISTRIBUTOR PORTAL</h1>
                     <p className="text-muted-foreground text-xs md:text-sm">{companyName} • {name}</p>
                 </div>
-
-                {/* Pending Complaints Cards */}
-                {recentComplaints.length > 0 && (
-                    <div className="w-full max-w-5xl mx-auto mb-6 md:mb-8 px-3 md:px-4">
-                        <div className="flex items-center justify-between mb-3 md:mb-4">
-                            <h2 className="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
-                                <AlertCircle className="h-5 w-5 text-red-500" />
-                                Pending Complaints ({stats.pending_complaints})
-                            </h2>
-                            <Link
-                                href="/distributor/complaints"
-                                className="text-xs md:text-sm text-primary hover:underline font-medium"
-                            >
-                                View All →
-                            </Link>
-                        </div>
-                        
-                        {/* Mobile: Scroll horizontally */}
-                        <div className="md:hidden overflow-x-auto pb-2 -mx-3 px-3">
-                            <div className="flex gap-3">
-                                {recentComplaints.map((complaint) => (
-                                    <Link
-                                        key={complaint.id}
-                                        href={`/distributor/complaints/${complaint.id}`}
-                                        className="flex-shrink-0 w-64 bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:scale-105"
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-16 h-16 rounded-lg bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
-                                                {complaint.product_image ? (
-                                                    <img
-                                                        src={complaint.product_image}
-                                                        alt={complaint.product_name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <AlertCircle className="h-8 w-8 text-red-400" />
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-semibold text-slate-900 truncate">{complaint.product_name}</p>
-                                                <p className="text-[10px] text-slate-500 mt-1">By: {complaint.retailer_name}</p>
-                                                <p className="text-[10px] text-slate-400 mt-1">{complaint.created_at}</p>
-                                                <div className="mt-2 flex items-center gap-1">
-                                                    <span className="text-[10px] font-medium text-red-600">Qty: {complaint.quantity}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="mt-3 pt-3 border-t border-red-200">
-                                            <p className="text-[10px] font-medium text-red-700 text-center">Click to review →</p>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Desktop: Grid */}
-                        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {recentComplaints.map((complaint) => (
-                                <Link
-                                    key={complaint.id}
-                                    href={`/distributor/complaints/${complaint.id}`}
-                                    className="group bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-4 hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-red-300"
-                                >
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-20 h-20 rounded-lg bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
-                                            {complaint.product_image ? (
-                                                <img
-                                                    src={complaint.product_image}
-                                                    alt={complaint.product_name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <AlertCircle className="h-10 w-10 text-red-400" />
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-slate-900 truncate">{complaint.product_name}</p>
-                                            <p className="text-xs text-slate-500 mt-1">By: {complaint.retailer_name}</p>
-                                            <p className="text-xs text-slate-400 mt-1">{complaint.created_at}</p>
-                                            <div className="mt-2 flex items-center gap-2">
-                                                <span className="text-xs font-medium text-red-600">Qty: {complaint.quantity} units</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="mt-3 pt-3 border-t border-red-200">
-                                        <p className="text-xs font-medium text-red-700 text-center group-hover:text-red-800 transition-colors">
-                                            Click to review complaint →
-                                        </p>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
                 {/* Cards Container */}
                 <div className="flex flex-col justify-center gap-3 md:gap-6 w-full max-w-5xl mx-auto pb-24 md:pb-28 px-3 md:px-4">

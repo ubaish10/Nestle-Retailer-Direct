@@ -1,6 +1,6 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Package, Calendar, User, Mail, AlertCircle, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Package, Calendar, User, Mail, AlertCircle, CheckCircle, XCircle, Clock, ImageOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -226,18 +226,49 @@ export default function DistributorComplaintReview({ complaint }: Props) {
                     </div>
 
                     {/* Proof Image */}
-                    {complaint.image_path && (
-                        <div className="bg-white rounded-xl p-6 border border-slate-200/50">
-                            <h2 className="text-lg font-bold text-slate-900 mb-4">Proof Image</h2>
-                            <div className="rounded-lg overflow-hidden bg-slate-100">
-                                <img
-                                    src={complaint.image_path}
-                                    alt="Proof of damage"
-                                    className="w-full h-auto max-h-96 object-contain"
-                                />
+                    <div className="bg-white rounded-xl p-6 border border-slate-200/50">
+                        <h2 className="text-lg font-bold text-slate-900 mb-4">Proof Image</h2>
+                        {complaint.image_path ? (
+                            <div className="space-y-3">
+                                <div className="rounded-lg overflow-hidden bg-slate-100 border-2 border-dashed border-slate-200">
+                                    <img
+                                        src={complaint.image_path}
+                                        alt="Proof of damage"
+                                        className="w-full h-auto max-h-96 object-contain"
+                                        onError={(e) => {
+                                            console.error('Failed to load proof image:', complaint.image_path);
+                                            const target = e.currentTarget;
+                                            target.style.display = 'none';
+                                            const parent = target.parentElement;
+                                            if (parent) {
+                                                parent.innerHTML = '';
+                                                const placeholder = document.createElement('div');
+                                                placeholder.className = 'flex flex-col items-center justify-center p-12 text-slate-400';
+                                                placeholder.innerHTML = `
+                                                    <svg class="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <p class="text-sm font-medium">Unable to load image</p>
+                                                    <p class="text-xs mt-1">The image file may have been deleted</p>
+                                                `;
+                                                parent.appendChild(placeholder);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 px-3 py-2 rounded">
+                                    <Package className="h-3 w-3" />
+                                    <span>Image path: {complaint.image_path}</span>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <div className="flex flex-col items-center justify-center p-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                                <ImageOff className="h-16 w-16 text-slate-300 mb-3" />
+                                <p className="text-sm font-medium text-slate-500">No proof image uploaded</p>
+                                <p className="text-xs text-slate-400 mt-1">The retailer did not upload an image with this complaint</p>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Order Details */}
                     {complaint.order && (

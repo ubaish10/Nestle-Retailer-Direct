@@ -1,6 +1,7 @@
 import { Head, usePage } from '@inertiajs/react';
-import { AlertCircle, CheckCircle, XCircle, Clock, Package, Calendar, ChevronRight, Plus } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Package, Calendar, ChevronRight, Plus, Eye, ImageOff, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -60,6 +61,8 @@ export default function ComplaintIndex({ complaints, stats }: Props) {
     const { toast } = useToast();
     const { flash } = usePage().props;
     const [filter, setFilter] = useState('all');
+    const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+    const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
         if (flash?.success) {
@@ -69,6 +72,16 @@ export default function ComplaintIndex({ complaints, stats }: Props) {
             });
         }
     }, [flash?.success]);
+
+    const handleViewComplaint = (complaint: Complaint) => {
+        setSelectedComplaint(complaint);
+        setShowModal(true);
+    };
+
+    const closeModal = () => {
+        setShowModal(false);
+        setSelectedComplaint(null);
+    };
 
     const filteredComplaints = filter === 'all' 
         ? complaints 
@@ -241,6 +254,16 @@ export default function ComplaintIndex({ complaints, stats }: Props) {
                                             </Badge>
                                         </div>
 
+                                        <Button
+                                            onClick={() => handleViewComplaint(complaint)}
+                                            variant="outline"
+                                            size="sm"
+                                            className="mb-3 text-sm font-medium"
+                                        >
+                                            <Eye className="h-4 w-4 mr-1" />
+                                            View Complaint
+                                        </Button>
+
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-xs">
                                             <div>
                                                 <p className="text-slate-500 mb-1">Quantity</p>
@@ -291,6 +314,192 @@ export default function ComplaintIndex({ complaints, stats }: Props) {
                     )}
                 </div>
             </div>
+
+            {/* Floating Modal for Complaint Details */}
+            {showModal && selectedComplaint && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        onClick={closeModal}
+                    />
+                    
+                    {/* Modal Content */}
+                    <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-slate-200/50">
+                        {/* Modal Header */}
+                        <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-200/50 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900">Complaint Details</h2>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Complaint ID: <span className="font-mono font-semibold">{selectedComplaint.complaint_id}</span>
+                                </p>
+                            </div>
+                            <button
+                                onClick={closeModal}
+                                className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                            >
+                                <X className="h-5 w-5 text-slate-600" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-6 space-y-6">
+                            {/* Status Badge */}
+                            <div className="flex items-center justify-center">
+                                <Badge className={`flex items-center gap-2 px-4 py-2 text-sm ${getStatusBadge(selectedComplaint.status)}`}>
+                                    {getStatusIcon(selectedComplaint.status)}
+                                    <span className="capitalize font-semibold">{selectedComplaint.status}</span>
+                                </Badge>
+                            </div>
+
+                            {/* Product Details */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/50">
+                                <h3 className="text-sm font-bold text-slate-900 mb-3">Product Details</h3>
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <div className="w-24 h-24 rounded-lg bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200">
+                                        {selectedComplaint.product_image ? (
+                                            <img
+                                                src={selectedComplaint.product_image}
+                                                alt={selectedComplaint.product_name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <Package className="h-10 w-10 text-slate-400" />
+                                        )}
+                                    </div>
+                                    <div className="flex-1 space-y-2">
+                                        <div>
+                                            <p className="text-xs text-slate-500">Product Name</p>
+                                            <p className="font-semibold text-slate-900">{selectedComplaint.product_name}</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <p className="text-xs text-slate-500">Quantity Affected</p>
+                                                <p className="font-semibold text-slate-900">{selectedComplaint.quantity} units</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-slate-500">Distributor</p>
+                                                <p className="font-semibold text-slate-900">{selectedComplaint.distributor_name}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Description */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/50">
+                                <h3 className="text-sm font-bold text-slate-900 mb-2">Description</h3>
+                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedComplaint.description}</p>
+                            </div>
+
+                            {/* Proof Image */}
+                            {selectedComplaint.image_path ? (
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/50">
+                                    <h3 className="text-sm font-bold text-slate-900 mb-3">Proof Image</h3>
+                                    <div className="rounded-lg overflow-hidden bg-white border border-slate-200">
+                                        <img
+                                            src={selectedComplaint.image_path}
+                                            alt="Proof of damage"
+                                            className="w-full h-auto max-h-64 object-contain"
+                                            onError={(e) => {
+                                                console.error('Failed to load image:', selectedComplaint.image_path);
+                                                const target = e.currentTarget;
+                                                target.style.display = 'none';
+                                                const parent = target.parentElement;
+                                                if (parent) {
+                                                    parent.innerHTML = '';
+                                                    const placeholder = document.createElement('div');
+                                                    placeholder.className = 'flex flex-col items-center justify-center p-8 text-slate-400';
+                                                    placeholder.innerHTML = `
+                                                        <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                        </svg>
+                                                        <p class="text-sm">Unable to load image</p>
+                                                    `;
+                                                    parent.appendChild(placeholder);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/50">
+                                    <h3 className="text-sm font-bold text-slate-900 mb-3">Proof Image</h3>
+                                    <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg border-2 border-dashed border-slate-200">
+                                        <ImageOff className="h-10 w-10 text-slate-300 mb-2" />
+                                        <p className="text-xs text-slate-500">No proof image uploaded</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Dates */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/50">
+                                <h3 className="text-sm font-bold text-slate-900 mb-3">Timeline</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-xs text-slate-500 mb-1">Submitted On</p>
+                                        <p className="font-semibold text-slate-900 flex items-center gap-2">
+                                            <Calendar className="h-4 w-4" />
+                                            {selectedComplaint.created_at}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500 mb-1">Resolved On</p>
+                                        <p className="font-semibold text-slate-900 flex items-center gap-2">
+                                            <Calendar className="h-4 w-4" />
+                                            {selectedComplaint.resolved_at || 'Pending'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Distributor Response */}
+                            {selectedComplaint.distributor_response && (
+                                <div className={`rounded-xl p-4 border-2 ${
+                                    selectedComplaint.status === 'approved'
+                                        ? 'bg-emerald-50 border-emerald-200'
+                                        : 'bg-red-50 border-red-200'
+                                }`}>
+                                    <h3 className={`text-sm font-bold mb-2 ${
+                                        selectedComplaint.status === 'approved' ? 'text-emerald-900' : 'text-red-900'
+                                    }`}>
+                                        {selectedComplaint.status === 'approved' ? '✓ Approved' : '✗ Rejected'}
+                                    </h3>
+                                    <div className={`rounded-lg p-3 ${
+                                        selectedComplaint.status === 'approved' ? 'bg-emerald-100' : 'bg-red-100'
+                                    }`}>
+                                        <p className={`text-xs font-medium mb-1 ${
+                                            selectedComplaint.status === 'approved' ? 'text-emerald-700' : 'text-red-700'
+                                        }`}>
+                                            Distributor Response:
+                                        </p>
+                                        <p className={`text-sm ${
+                                            selectedComplaint.status === 'approved' ? 'text-emerald-600' : 'text-red-600'
+                                        }`}>
+                                            {selectedComplaint.distributor_response}
+                                        </p>
+                                    </div>
+                                    {selectedComplaint.resolved_at && (
+                                        <p className="text-xs text-slate-500 mt-2">
+                                            Resolved on: {selectedComplaint.resolved_at}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-slate-200/50 px-6 py-4 rounded-b-2xl">
+                            <Button
+                                onClick={closeModal}
+                                className="w-full bg-[#00447C] hover:bg-[#003366] text-white font-semibold py-3"
+                            >
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
