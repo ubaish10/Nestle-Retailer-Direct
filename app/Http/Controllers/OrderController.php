@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\RetailerInventory;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,19 @@ class OrderController extends Controller
             'items.min' => 'Please select at least one item to order.',
             'distributor_id.required' => 'Please select a distributor to place your order.',
         ]);
+
+        // Validate that the selected distributor is approved
+        $distributor = User::where('id', $validated['distributor_id'])
+            ->where('role', 'distributor')
+            ->where('approval_status', 'approved')
+            ->first();
+            
+        if (!$distributor) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['distributor_id' => 'Selected distributor is not available.'],
+            ], 422);
+        }
 
         // Validate that order quantity doesn't exceed distributor warehouse stock
         foreach ($validated['items'] as $item) {
@@ -70,6 +84,49 @@ class OrderController extends Controller
             $totalAmount += $item['quantity'] * $item['price'];
         }
 
+        // For PayPal payment, redirect to PayPal controller with order data (don't create order yet)
+        if ($validated['payment_method'] === 'paypal') {
+            // Return JSON with redirect URL to PayPal process endpoint
+            return response()->json([
+                'success' => true,
+                'redirectUrl' => route('paypal.process'),
+                'orderData' => [
+                    'distributor_id' => $validated['distributor_id'],
+                    'payment_method' => $validated['payment_method'],
+                    'items' => $validated['items'],
+                ],
+            ]);
+        }
+
+        // For Credit Card payment, process immediately (mock payment - instant success)
+        if ($validated['payment_method'] === 'credit_card') {
+            $order = Order::create([
+                'user_id' => Auth::id(),
+                'distributor_id' => $validated['distributor_id'],
+                'status' => 'pending',
+                'total_amount' => $totalAmount,
+                'payment_method' => 'credit_card',
+                'payment_status' => 'paid',
+            ]);
+
+            foreach ($validated['items'] as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item['product_id'] ?? null,
+                    'product_name' => $item['product_name'],
+                    'product_image' => $item['product_image'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'subtotal' => $item['quantity'] * $item['price'],
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+            ]);
+        }
+
+        // For COD, create the order
         $order = Order::create([
             'user_id' => Auth::id(),
             'distributor_id' => $validated['distributor_id'],
@@ -88,26 +145,6 @@ class OrderController extends Controller
                 'quantity' => $item['quantity'],
                 'price' => $item['price'],
                 'subtotal' => $item['quantity'] * $item['price'],
-            ]);
-        }
-
-        // For PayPal payment, return JSON with redirect URL
-        if ($validated['payment_method'] === 'paypal') {
-            return response()->json([
-                'success' => true,
-                'redirectUrl' => route('paypal.process', ['order_id' => $order->id]),
-            ]);
-        }
-
-        // For Credit Card payment, process immediately (mock payment - instant success)
-        if ($validated['payment_method'] === 'credit_card') {
-            $order->update([
-                'payment_status' => 'paid',
-                'payment_method' => 'credit_card',
-            ]);
-
-            return response()->json([
-                'success' => true,
             ]);
         }
 
@@ -263,15 +300,36 @@ class OrderController extends Controller
      */
     public function userProfile()
     {
-        $user = Auth::user();
-        
+        $user = Auth::user()->load(['shopProfile', 'distributorProfile']);
+
+        $phone = null;
+        $address = null;
+        $city = null;
+        $shopName = null;
+        $companyName = null;
+
+        if ($user->isRetailer() && $user->shopProfile) {
+            $phone = $user->shopProfile->shop_phone;
+            $address = $user->shopProfile->shop_address;
+            $city = $user->shopProfile->shop_city;
+            $shopName = $user->shopProfile->shop_name;
+        } elseif ($user->isDistributor() && $user->distributorProfile) {
+            $phone = $user->distributorProfile->company_phone;
+            $address = $user->distributorProfile->company_address;
+            $city = $user->distributorProfile->company_city;
+            $companyName = $user->distributorProfile->company_name;
+        }
+
         return inertia('UserProfile', [
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'phone' => $user->phone ?? null,
-                'address' => $user->address ?? null,
+                'phone' => $phone,
+                'address' => $address,
+                'city' => $city,
+                'shopName' => $shopName,
+                'companyName' => $companyName,
                 'created_at' => $user->created_at,
             ],
         ]);

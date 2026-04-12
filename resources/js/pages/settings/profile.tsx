@@ -1,8 +1,7 @@
 import { Transition } from '@headlessui/react';
 import { Form, Head, Link, usePage } from '@inertiajs/react';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
+import DeleteUser from '@/components/delete-user';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,9 +22,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Profile({
     mustVerifyEmail,
     status,
+    shopName,
+    companyName,
 }: {
     mustVerifyEmail: boolean;
     status?: string;
+    shopName?: string | null;
+    companyName?: string | null;
 }) {
     const { auth } = usePage().props;
 
@@ -44,7 +47,8 @@ export default function Profile({
                     />
 
                     <Form
-                        {...ProfileController.update.form()}
+                        method="patch"
+                        action="/settings/profile"
                         options={{
                             preserveScroll: true,
                         }}
@@ -71,16 +75,46 @@ export default function Profile({
                                     />
                                 </div>
 
+                                {shopName && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="shopName">Shop Name</Label>
+
+                                        <Input
+                                            id="shopName"
+                                            className="mt-1 block w-full bg-slate-100 cursor-not-allowed"
+                                            defaultValue={shopName}
+                                            disabled
+                                            autoComplete="off"
+                                            placeholder="Shop name"
+                                        />
+                                    </div>
+                                )}
+
+                                {companyName && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="companyName">Company Name</Label>
+
+                                        <Input
+                                            id="companyName"
+                                            className="mt-1 block w-full bg-slate-100 cursor-not-allowed"
+                                            defaultValue={companyName}
+                                            disabled
+                                            autoComplete="off"
+                                            placeholder="Company name"
+                                        />
+                                    </div>
+                                )}
+
                                 <div className="grid gap-2">
                                     <Label htmlFor="email">Email address</Label>
 
                                     <Input
                                         id="email"
                                         type="email"
-                                        className="mt-1 block w-full"
+                                        className="mt-1 block w-full bg-slate-100 cursor-not-allowed"
                                         defaultValue={auth.user.email}
                                         name="email"
-                                        required
+                                        disabled
                                         autoComplete="username"
                                         placeholder="Email address"
                                     />

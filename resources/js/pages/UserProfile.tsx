@@ -15,6 +15,9 @@ interface Props {
         email: string;
         phone?: string | null;
         address?: string | null;
+        city?: string | null;
+        shopName?: string | null;
+        companyName?: string | null;
         created_at: string;
     };
 }
@@ -41,18 +44,20 @@ export default function UserProfile({ user }: Props) {
         email: user.email || '',
         phone: user.phone || '',
         address: user.address || '',
+        city: user.city || '',
     });
 
     const passwordForm = useForm({
         current_password: '',
-        new_password: '',
-        new_password_confirmation: '',
+        password: '',
+        password_confirmation: '',
     });
 
     const handleProfileSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         profileForm.put('/user/profile-information', {
+            preserveScroll: true,
             onSuccess: () => {
                 toast({
                     title: 'Profile updated',
@@ -100,7 +105,7 @@ export default function UserProfile({ user }: Props) {
                     <div className="container mx-auto px-4 py-6">
                         <div className="flex items-center gap-4">
                             <Link
-                                href="/my-orders"
+                                href="/"
                                 className="p-2 hover:bg-white/10 rounded-full transition-colors"
                             >
                                 <ArrowLeft className="h-6 w-6" />
@@ -181,6 +186,39 @@ export default function UserProfile({ user }: Props) {
                                         )}
                                     </div>
 
+                                    {/* Shop Name / Company Name */}
+                                    {user.shopName && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="shopName" className="flex items-center gap-2">
+                                                <User className="h-4 w-4" />
+                                                Shop Name
+                                            </Label>
+                                            <Input
+                                                id="shopName"
+                                                value={user.shopName}
+                                                disabled
+                                                className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                                            />
+                                            <p className="text-xs text-slate-500">Shop name cannot be changed</p>
+                                        </div>
+                                    )}
+
+                                    {user.companyName && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="companyName" className="flex items-center gap-2">
+                                                <User className="h-4 w-4" />
+                                                Company Name
+                                            </Label>
+                                            <Input
+                                                id="companyName"
+                                                value={user.companyName}
+                                                disabled
+                                                className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                                            />
+                                            <p className="text-xs text-slate-500">Company name cannot be changed</p>
+                                        </div>
+                                    )}
+
                                     {/* Email */}
                                     <div className="space-y-2">
                                         <Label htmlFor="email" className="flex items-center gap-2">
@@ -191,12 +229,10 @@ export default function UserProfile({ user }: Props) {
                                             id="email"
                                             type="email"
                                             value={profileForm.data.email}
-                                            onChange={(e) => profileForm.setData('email', e.target.value)}
-                                            className="bg-white/50 dark:bg-white/5"
+                                            disabled
+                                            className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
                                         />
-                                        {profileForm.errors.email && (
-                                            <p className="text-sm text-red-500">{profileForm.errors.email}</p>
-                                        )}
+                                        <p className="text-xs text-slate-500">Email cannot be changed</p>
                                     </div>
 
                                     {/* Phone */}
@@ -209,7 +245,6 @@ export default function UserProfile({ user }: Props) {
                                             id="phone"
                                             value={profileForm.data.phone || ''}
                                             onChange={(e) => profileForm.setData('phone', e.target.value)}
-                                            placeholder="Enter your phone number"
                                             className="bg-white/50 dark:bg-white/5"
                                         />
                                         {profileForm.errors.phone && (
@@ -226,27 +261,30 @@ export default function UserProfile({ user }: Props) {
                                         <Input
                                             id="address"
                                             value={profileForm.data.address || ''}
-                                            onChange={(e) => profileForm.setData('address', e.target.value)}
-                                            placeholder="Enter your address"
-                                            className="bg-white/50 dark:bg-white/5"
+                                            disabled
+                                            className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
                                         />
-                                        {profileForm.errors.address && (
-                                            <p className="text-sm text-red-500">{profileForm.errors.address}</p>
-                                        )}
+                                        <p className="text-xs text-slate-500">Address cannot be changed</p>
+                                    </div>
+
+                                    {/* City */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="city" className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4" />
+                                            City
+                                        </Label>
+                                        <Input
+                                            id="city"
+                                            value={profileForm.data.city || ''}
+                                            disabled
+                                            className="bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                                        />
+                                        <p className="text-xs text-slate-500">City cannot be changed</p>
                                     </div>
                                 </div>
 
                                 {/* Save Button */}
-                                <div className="flex justify-end gap-3 pt-4 border-t">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => profileForm.reset()}
-                                        disabled={profileForm.processing}
-                                        className="border-gray-300"
-                                    >
-                                        Cancel
-                                    </Button>
+                                <div className="flex justify-end pt-4 border-t">
                                     <Button
                                         type="submit"
                                         disabled={profileForm.processing}
@@ -304,13 +342,13 @@ export default function UserProfile({ user }: Props) {
 
                                             {/* New Password */}
                                             <div className="space-y-2">
-                                                <Label htmlFor="new_password">New Password</Label>
+                                                <Label htmlFor="password">New Password</Label>
                                                 <div className="relative">
                                                     <Input
-                                                        id="new_password"
+                                                        id="password"
                                                         type={showNewPassword ? 'text' : 'password'}
-                                                        value={passwordForm.data.new_password}
-                                                        onChange={(e) => passwordForm.setData('new_password', e.target.value)}
+                                                        value={passwordForm.data.password}
+                                                        onChange={(e) => passwordForm.setData('password', e.target.value)}
                                                         placeholder="Enter new password"
                                                         className="bg-white/50 dark:bg-white/5 pr-10"
                                                     />
@@ -328,20 +366,20 @@ export default function UserProfile({ user }: Props) {
                                                         )}
                                                     </Button>
                                                 </div>
-                                                {passwordForm.errors.new_password && (
-                                                    <p className="text-sm text-red-500">{passwordForm.errors.new_password}</p>
+                                                {passwordForm.errors.password && (
+                                                    <p className="text-sm text-red-500">{passwordForm.errors.password}</p>
                                                 )}
                                             </div>
 
                                             {/* Confirm Password */}
                                             <div className="space-y-2 md:col-span-2">
-                                                <Label htmlFor="new_password_confirmation">Confirm New Password</Label>
+                                                <Label htmlFor="password_confirmation">Confirm New Password</Label>
                                                 <div className="relative">
                                                     <Input
-                                                        id="new_password_confirmation"
+                                                        id="password_confirmation"
                                                         type={showConfirmPassword ? 'text' : 'password'}
-                                                        value={passwordForm.data.new_password_confirmation}
-                                                        onChange={(e) => passwordForm.setData('new_password_confirmation', e.target.value)}
+                                                        value={passwordForm.data.password_confirmation}
+                                                        onChange={(e) => passwordForm.setData('password_confirmation', e.target.value)}
                                                         placeholder="Confirm new password"
                                                         className="bg-white/50 dark:bg-white/5 pr-10"
                                                     />
@@ -359,8 +397,8 @@ export default function UserProfile({ user }: Props) {
                                                         )}
                                                     </Button>
                                                 </div>
-                                                {passwordForm.errors.new_password_confirmation && (
-                                                    <p className="text-sm text-red-500">{passwordForm.errors.new_password_confirmation}</p>
+                                                {passwordForm.errors.password_confirmation && (
+                                                    <p className="text-sm text-red-500">{passwordForm.errors.password_confirmation}</p>
                                                 )}
                                             </div>
                                         </div>

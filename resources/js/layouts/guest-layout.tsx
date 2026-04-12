@@ -1,6 +1,6 @@
 import { Link, usePage, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
-import { Home, Package, ShoppingCart, Settings, User, LogOut, LogIn, UserPlus, LayoutDashboard } from 'lucide-react';
+import { Home, Package, ShoppingCart, User, LogOut, LogIn, UserPlus } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -67,12 +67,14 @@ export default function GuestLayout({
                         {isLoggedIn ? (
                             <>
                                 {/* User profile button */}
-                                <Button variant="ghost" className="flex items-center gap-2 text-white hover:bg-white/10 border border-white/20 transition-all duration-300">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white/30 to-white/10 border border-white/30 flex items-center justify-center">
-                                        <User className="h-4 w-4 text-white" />
-                                    </div>
-                                    <span className="text-sm font-medium">{auth.user?.name || 'User'}</span>
-                                </Button>
+                                <Link href="/user/profile">
+                                    <Button variant="ghost" className="flex items-center gap-2 text-white hover:bg-white/10 border border-white/20 transition-all duration-300">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white/30 to-white/10 border border-white/30 flex items-center justify-center">
+                                            <User className="h-4 w-4 text-white" />
+                                        </div>
+                                        <span className="text-sm font-medium">{auth.user?.name || 'User'}</span>
+                                    </Button>
+                                </Link>
                                 <Button
                                     type="button"
                                     variant="ghost"
@@ -123,13 +125,7 @@ export default function GuestLayout({
                                     <DropdownMenuSeparator />
                                     <DropdownMenuGroup>
                                         <DropdownMenuItem asChild>
-                                            <Link href="/dashboard" className="flex items-center gap-2">
-                                                <LayoutDashboard className="h-4 w-4" />
-                                                Dashboard
-                                            </Link>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem asChild>
-                                            <Link href="/profile" className="flex items-center gap-2">
+                                            <Link href="/user/profile" className="flex items-center gap-2">
                                                 <User className="h-4 w-4" />
                                                 Profile
                                             </Link>

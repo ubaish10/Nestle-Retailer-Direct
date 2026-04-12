@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Complaint;
 use App\Models\DistributorInventory;
 use App\Models\Order;
 use App\Models\Product;
@@ -19,12 +20,13 @@ class DistributorController extends Controller
     {
         $user = auth()->user();
         $distributorProfile = $user->distributorProfile;
+        $distributorId = $user->id;
 
         // Get quick stats
         $stats = [
-            'pending_orders' => Order::where('status', 'pending')->count(),
+            'pending_orders' => Order::where('distributor_id', $distributorId)->where('status', 'pending')->count(),
             'total_retailers' => User::where('role', 'retailer')->count(),
-            'in_transit' => Order::where('status', 'in_transit')->count(),
+            'in_transit' => Order::where('distributor_id', $distributorId)->where('status', 'in_transit')->count(),
         ];
 
         return inertia('distributor-home', [

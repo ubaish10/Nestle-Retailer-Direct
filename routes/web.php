@@ -12,6 +12,9 @@ use App\Http\Controllers\QuickReorderController;
 use App\Http\Controllers\RetailerInventoryController;
 use App\Http\Controllers\PayPalController;
 use App\Http\Controllers\UserApprovalsController;
+use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\Settings\PasswordController;
 
 // Home route - redirects based on user role
 Route::get('/', function () {
@@ -37,6 +40,9 @@ Route::post('/clear-approval-status', function (\Illuminate\Http\Request $reques
     return redirect()->route('login');
 })->name('clear-approval-status');
 
+// Settings routes (must be before admin/distributor routes)
+require __DIR__.'/settings.php';
+
 // Distributor routes
 Route::middleware(['auth', 'verified', 'distributor'])->group(function () {
     Route::get('/distributor/home', [DistributorController::class, 'home'])->name('distributor.home');
@@ -59,11 +65,23 @@ Route::middleware(['auth', 'verified', 'distributor'])->group(function () {
     Route::get('/distributor/notifications', [DistributorController::class, 'notifications'])->name('distributor.notifications');
     Route::get('/distributor/warehouse-inventory', [DistributorController::class, 'warehouseInventory'])->name('distributor.warehouse-inventory');
     Route::post('/distributor/warehouse-inventory/{product}/restock', [DistributorController::class, 'restock'])->name('distributor.warehouse-inventory.restock');
+    
+    // Distributor complaint routes
+    Route::get('/distributor/complaints', [ComplaintController::class, 'distributorIndex'])->name('distributor.complaints.index');
+    Route::get('/distributor/complaints/{complaint}', [ComplaintController::class, 'distributorShow'])->name('distributor.complaints.show');
+    Route::post('/distributor/complaints/{complaint}/approve', [ComplaintController::class, 'distributorApprove'])->name('distributor.complaints.approve');
+    Route::post('/distributor/complaints/{complaint}/reject', [ComplaintController::class, 'distributorReject'])->name('distributor.complaints.reject');
+    Route::post('/distributor/complaints/{complaint}/mark-pending', [ComplaintController::class, 'distributorMarkPending'])->name('distributor.complaints.mark-pending');
 });
 
 // Retailer inventory routes
 Route::middleware(['auth', 'verified', 'retailer'])->group(function () {
     Route::get('/retailer/inventory', [RetailerInventoryController::class, 'index'])->name('retailer.inventory');
+    
+    // Retailer complaint routes
+    Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
+    Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
+    Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints.index');
 });
 
 Route::middleware(['auth'])->get('/quick-reorder', [QuickReorderController::class, 'index'])->name('quick-reorder');
@@ -110,13 +128,13 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
 Route::middleware(['auth'])->post('/orders', [OrderController::class, 'store'])->name('orders.store');
 Route::middleware(['auth'])->get('/my-orders', [OrderController::class, 'myOrders'])->name('my-orders');
 Route::middleware(['auth'])->get('/user/profile', [OrderController::class, 'userProfile'])->name('user.profile');
+Route::middleware(['auth'])->put('/user/profile-information', [ProfileController::class, 'update'])->name('user.profile-information.update');
+Route::middleware(['auth'])->put('/user/password', [PasswordController::class, 'update'])->name('user.password.update');
 
 // PayPal payment routes
 Route::middleware(['auth'])->group(function () {
-    Route::get('/paypal/process/{order_id}', [PayPalController::class, 'processPayment'])->name('paypal.process');
-    Route::get('/paypal/success/{order_id}', [PayPalController::class, 'success'])->name('paypal.success');
-    Route::get('/paypal/cancel/{order_id}', [PayPalController::class, 'cancel'])->name('paypal.cancel');
+    Route::match(['get', 'post'], '/paypal/process', [PayPalController::class, 'processPayment'])->name('paypal.process');
+    Route::get('/paypal/success', [PayPalController::class, 'success'])->name('paypal.success');
+    Route::get('/paypal/cancel', [PayPalController::class, 'cancel'])->name('paypal.cancel');
     Route::post('/paypal/notify', [PayPalController::class, 'notify'])->name('paypal.notify');
 });
-
-require __DIR__.'/settings.php';

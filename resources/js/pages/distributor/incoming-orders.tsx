@@ -1,6 +1,6 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, Link } from '@inertiajs/react';
 import { useState } from 'react';
-import { Package, Clock, CheckCircle, XCircle, AlertCircle, ArrowRight, Sparkles, Trash2, Checkbox } from 'lucide-react';
+import { Package, Clock, CheckCircle, XCircle, AlertCircle, ArrowRight, Sparkles, Trash2, Checkbox, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -174,6 +174,12 @@ export default function IncomingOrders({ orders, stats }: Props) {
                     <div className="relative px-4 md:px-6 py-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
+                                <Link
+                                    href="/distributor/home"
+                                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                                >
+                                    <ArrowLeft className="h-5 w-5 text-slate-600" />
+                                </Link>
                                 <div className="relative flex-shrink-0">
                                     <div className="absolute inset-0 bg-[#00447C]/20 rounded-xl blur-md"></div>
                                     <div className="relative w-10 h-10 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-[#00447C] to-[#003d6f] flex items-center justify-center shadow-lg">

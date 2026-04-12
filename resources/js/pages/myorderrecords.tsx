@@ -1,7 +1,8 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { Clock, Package, Calendar, DollarSign, ChevronRight, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface OrderItem {
     product_name: string;
@@ -49,7 +50,19 @@ function getStatusBadgeClass(status: string): string {
 }
 
 export default function MyOrderRecords({ orders, stats }: Props) {
+    const { toast } = useToast();
+    const { flash } = usePage().props;
     const [filter, setFilter] = useState('all');
+
+    // Show success toast if there's a flash message
+    useEffect(() => {
+        if (flash?.success) {
+            toast({
+                title: 'Success',
+                description: flash.success,
+            });
+        }
+    }, [flash?.success]);
 
     const filteredOrders = filter === 'all' ? orders : orders.filter(o => o.status === filter);
     const pendingOrders = filteredOrders.filter(o => o.status === 'pending');

@@ -17,8 +17,9 @@ class QuickReorderController extends Controller
     {
         $retailerId = auth()->id();
 
-        // Get distributors with their stock quantities
+        // Get only APPROVED distributors with their stock quantities
         $distributors = User::where('role', 'distributor')
+            ->where('approval_status', 'approved')
             ->with('distributorProfile')
             ->get()
             ->map(function ($user) {
@@ -26,6 +27,7 @@ class QuickReorderController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'company_name' => $user->distributorProfile?->company_name ?? null,
+                    'company_city' => $user->distributorProfile?->company_city ?? null,
                 ];
             })->values();
 
@@ -110,13 +112,28 @@ class QuickReorderController extends Controller
             $totalAmount += $item['quantity'] * $item['price'];
         }
 
+        // If PayPal, store order data in session and redirect to PayPal (don't create order yet)
+        if ($validated['payment_method'] === 'paypal') {
+            session([
+                'pending_paypal_order' => [
+                    'distributor_id' => $validated['distributor_id'],
+                    'payment_method' => $validated['payment_method'],
+                    'items' => $validated['items'],
+                    'total_amount' => $totalAmount,
+                ]
+            ]);
+            
+            return redirect()->route('paypal.process');
+        }
+
+        // For COD (Cash on Delivery), create the order
         $order = Order::create([
             'user_id' => Auth::id(),
             'distributor_id' => $validated['distributor_id'],
             'status' => 'pending',
             'total_amount' => $totalAmount,
             'payment_method' => $validated['payment_method'],
-            'payment_status' => $validated['payment_method'] === 'paypal' ? 'pending' : 'pending',
+            'payment_status' => 'pending',
         ]);
 
         foreach ($validated['items'] as $item) {
@@ -131,12 +148,7 @@ class QuickReorderController extends Controller
             ]);
         }
 
-        // If PayPal, redirect to PayPal payment
-        if ($validated['payment_method'] === 'paypal') {
-            return redirect()->route('paypal.process', ['order_id' => $order->id]);
-        }
-
-        // For COD (Cash on Delivery), redirect to my-orders with success
+        // For COD, redirect to my-orders with success
         return redirect()->route('my-orders')->with('success', 'Order placed successfully!');
     }
 

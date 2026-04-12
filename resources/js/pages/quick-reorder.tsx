@@ -298,7 +298,7 @@ export default function QuickReorder({ products, distributors }: Props) {
         setIsSubmitting(true);
 
         if (selectedPaymentMethod === 'paypal') {
-            // Use fetch for PayPal to get JSON response and redirect manually
+            // First, submit order to /orders to get order data validated
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
             fetch('/orders', {
@@ -316,12 +316,31 @@ export default function QuickReorder({ products, distributors }: Props) {
             .then(data => {
                 setIsSubmitting(false);
                 if (data.success && data.redirectUrl) {
-                    toast({
-                        title: 'Order placed successfully!',
-                        description: 'Redirecting to PayPal...',
-                    });
-                    // Full page redirect bypassing Inertia
-                    window.location.assign(data.redirectUrl);
+                    // Don't show success toast yet - wait for PayPal payment to complete
+                    // Redirect to PayPal process endpoint with order data
+                    const paypalUrl = data.redirectUrl;
+                    
+                    // Create a form and submit order data to PayPal endpoint via POST
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = paypalUrl;
+                    
+                    // Add CSRF token
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '_token';
+                    csrfInput.value = csrfToken;
+                    form.appendChild(csrfInput);
+                    
+                    // Add order data
+                    const dataInput = document.createElement('input');
+                    dataInput.type = 'hidden';
+                    dataInput.name = 'order_data';
+                    dataInput.value = JSON.stringify(data.orderData);
+                    form.appendChild(dataInput);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
                 } else {
                     throw new Error('Invalid response from server');
                 }
@@ -370,23 +389,37 @@ export default function QuickReorder({ products, distributors }: Props) {
             return;
         }
 
+        // Debug logging
+        console.log('Card validation debug:', {
+            cardNumber,
+            cardNumberLength: cardNumber.replace(/\D/g, '').length,
+            cardExpiry,
+            cardCvv,
+            cardName,
+        });
+
         // Validate card details
         if (!validateCardNumber(cardNumber)) {
+            const digits = cardNumber.replace(/\D/g, '');
             toast({
                 title: 'Invalid Card Number',
-                description: 'Please enter a valid 16-digit card number',
+                description: `Please enter a valid 16-digit card number. Current: ${digits.length} digits`,
                 variant: 'destructive',
             });
+            console.error('Card number validation failed:', digits);
             cardNumberRef.current?.focus();
             return;
         }
 
         if (!validateExpiryDate(cardExpiry)) {
+            const currentYear = new Date().getFullYear() % 100;
+            const currentMonth = new Date().getMonth() + 1;
             toast({
                 title: 'Invalid Expiry Date',
-                description: 'Please enter a valid expiry date (MM/YY)',
+                description: `Please enter a valid expiry date (MM/YY). Current: ${currentMonth}/${currentYear}`,
                 variant: 'destructive',
             });
+            console.error('Expiry validation failed:', cardExpiry, 'Current:', `${currentMonth}/${currentYear}`);
             return;
         }
 
@@ -396,6 +429,7 @@ export default function QuickReorder({ products, distributors }: Props) {
                 description: 'Please enter a valid 3-digit CVV',
                 variant: 'destructive',
             });
+            console.error('CVV validation failed:', cardCvv);
             return;
         }
 
@@ -511,8 +545,11 @@ export default function QuickReorder({ products, distributors }: Props) {
                                                 key={distributor.id}
                                                 onClick={() => setSelectedDistributor(distributor)}
                                             >
-                                                <div className="flex flex-col">
+                                                <div className="flex flex-col gap-0.5">
                                                     <span className="font-medium text-xs md:text-sm">{distributor.company_name || distributor.name}</span>
+                                                    {distributor.company_city && (
+                                                        <span className="text-[10px] md:text-xs text-gray-500">{distributor.company_city}</span>
+                                                    )}
                                                 </div>
                                             </DropdownMenuItem>
                                         ))}

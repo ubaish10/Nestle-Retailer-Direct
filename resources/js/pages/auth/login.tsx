@@ -3,25 +3,21 @@ import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
-import { request } from '@/routes/password';
 import { ArrowLeft } from 'lucide-react';
 
 type Props = {
     status?: string;
-    canResetPassword: boolean;
     canRegister: boolean;
 };
 
 export default function Login({
     status,
-    canResetPassword,
     canRegister,
 }: Props) {
     const { errors, flash } = usePage().props;
@@ -107,7 +103,7 @@ export default function Login({
                     </div>
 
                     <Button
-                        onClick={handleRefreshPending}
+                        onClick={handleProceedToLogin}
                         className="gap-2"
                         variant="outline"
                     >
@@ -150,18 +146,7 @@ export default function Login({
                             </div>
 
                             <div className="grid gap-2">
-                                <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
-                                    {canResetPassword && (
-                                        <TextLink
-                                            href={request()}
-                                            className="ml-auto text-sm"
-                                            tabIndex={5}
-                                        >
-                                            Forgot password?
-                                        </TextLink>
-                                    )}
-                                </div>
+                                <Label htmlFor="password">Password</Label>
                                 <PasswordInput
                                     id="password"
                                     name="password"
@@ -171,15 +156,6 @@ export default function Login({
                                     placeholder="Password"
                                 />
                                 <InputError message={formErrors.password} />
-                            </div>
-
-                            <div className="flex items-center space-x-3">
-                                <Checkbox
-                                    id="remember"
-                                    name="remember"
-                                    tabIndex={3}
-                                />
-                                <Label htmlFor="remember">Remember me</Label>
                             </div>
 
                             <Button

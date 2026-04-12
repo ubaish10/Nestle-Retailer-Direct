@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import GuestLayout from '@/layouts/guest-layout';
 import {
+    AlertCircle,
     ClipboardList,
     Warehouse,
     Truck,
@@ -13,10 +14,17 @@ import {
 
 const distributorSections = [
     {
-        area: 'Retailer Orders',
+        area: 'Incoming Orders',
         icon: ClipboardList,
         href: '/distributor/incoming-orders',
         description: 'View incoming orders',
+        isComingSoon: false,
+    },
+    {
+        area: 'Complaints',
+        icon: AlertCircle,
+        href: '/distributor/complaints',
+        description: 'Manage complaints',
         isComingSoon: false,
     },
     {
@@ -73,9 +81,14 @@ const distributorSections = [
 interface Props {
     name: string;
     companyName: string;
+    stats: {
+        pending_orders: number;
+        total_retailers: number;
+        in_transit: number;
+    };
 }
 
-export default function DistributorHome({ name, companyName }: Props) {
+export default function DistributorHome({ name, companyName, stats }: Props) {
     return (
         <GuestLayout>
             <Head title="Distributor Portal" />
