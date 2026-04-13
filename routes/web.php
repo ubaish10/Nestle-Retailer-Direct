@@ -13,6 +13,7 @@ use App\Http\Controllers\RetailerInventoryController;
 use App\Http\Controllers\PayPalController;
 use App\Http\Controllers\UserApprovalsController;
 use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\PasswordController;
 
@@ -123,7 +124,20 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
 
     // Products routes
     Route::get('products', [ProductController::class, 'index'])->name('products.index');
+
+    // Promotions routes
+    Route::get('promotions', [PromotionController::class, 'index'])->name('admin.promotions.index');
+    Route::get('promotions/create', [PromotionController::class, 'create'])->name('admin.promotions.create');
+    Route::post('promotions', [PromotionController::class, 'store'])->name('admin.promotions.store');
+    Route::get('promotions/{promotion}/edit', [PromotionController::class, 'edit'])->name('admin.promotions.edit');
+    Route::put('promotions/{promotion}', [PromotionController::class, 'update'])->name('admin.promotions.update');
+    Route::delete('promotions/{promotion}', [PromotionController::class, 'destroy'])->name('admin.promotions.destroy');
+    Route::get('promotions/generate-code', [PromotionController::class, 'generatePromoCode'])->name('admin.promotions.generate-code');
 });
+
+// Promo code validation routes (authenticated users)
+Route::middleware(['auth'])->post('/api/promo-code/validate', [PromotionController::class, 'validatePromoCode'])->name('api.promo-code.validate');
+Route::middleware(['auth'])->get('/api/promotions/active', [PromotionController::class, 'activePromotions'])->name('api.promotions.active');
 
 Route::middleware(['auth'])->post('/orders', [OrderController::class, 'store'])->name('orders.store');
 Route::middleware(['auth'])->get('/my-orders', [OrderController::class, 'myOrders'])->name('my-orders');

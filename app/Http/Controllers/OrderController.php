@@ -6,6 +6,7 @@ use App\Models\DistributorInventory;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Promotion;
 use App\Models\RetailerInventory;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -31,6 +32,7 @@ class OrderController extends Controller
             'items.*.price' => 'required|numeric|min:0',
             'distributor_id' => 'required|integer|exists:users,id',
             'payment_method' => 'nullable|in:cod,paypal,credit_card',
+            'promo_code' => 'nullable|string',
         ], [
             'items.required' => 'Please select at least one item to order.',
             'items.min' => 'Please select at least one item to order.',
@@ -42,7 +44,7 @@ class OrderController extends Controller
             ->where('role', 'distributor')
             ->where('approval_status', 'approved')
             ->first();
-            
+
         if (!$distributor) {
             return response()->json([
                 'success' => false,
@@ -61,7 +63,7 @@ class OrderController extends Controller
 
                 if ($item['quantity'] > $availableQuantity) {
                     $product = Product::find($item['product_id']);
-                    
+
                     // Return JSON error for AJAX requests
                     if ($request->expectsJson() || $request->header('X-Inertia')) {
                         return response()->json([
@@ -69,7 +71,7 @@ class OrderController extends Controller
                             'errors' => ['items' => "Only {$availableQuantity} units of {$product->name} available in warehouse."],
                         ], 422);
                     }
-                    
+
                     return back()->withErrors([
                         'items' => "Only {$availableQuantity} units of {$product->name} available in warehouse.",
                     ])->withInput();
@@ -79,9 +81,36 @@ class OrderController extends Controller
 
         \Log::info('Validated data:', $validated);
 
+        // Calculate total amount
         $totalAmount = 0;
         foreach ($validated['items'] as $item) {
             $totalAmount += $item['quantity'] * $item['price'];
+        }
+
+        // Apply promotion discount if promo code is provided
+        $promotion = null;
+        $discountAmount = 0;
+        $promotionId = null;
+
+        if (!empty($validated['promo_code'])) {
+            $promotion = Promotion::where('promo_code', strtoupper($validated['promo_code']))->first();
+
+            if ($promotion && $promotion->isValid()) {
+                $productIds = array_filter(array_column($validated['items'], 'product_id'));
+                $discountAmount = $promotion->calculateDiscount($totalAmount, $productIds);
+
+                if ($discountAmount > 0) {
+                    $promotionId = $promotion->id;
+                    $totalAmount -= $discountAmount;
+                    $totalAmount = max(0, $totalAmount); // Ensure total doesn't go negative
+
+                    \Log::info('Promotion applied:', [
+                        'promo_code' => $promotion->promo_code,
+                        'discount_amount' => $discountAmount,
+                        'new_total' => $totalAmount,
+                    ]);
+                }
+            }
         }
 
         // For PayPal payment, redirect to PayPal controller with order data (don't create order yet)
@@ -94,6 +123,9 @@ class OrderController extends Controller
                     'distributor_id' => $validated['distributor_id'],
                     'payment_method' => $validated['payment_method'],
                     'items' => $validated['items'],
+                    'promotion_id' => $promotionId,
+                    'discount_amount' => $discountAmount,
+                    'promo_code' => $validated['promo_code'] ?? null,
                 ],
             ]);
         }
@@ -107,6 +139,9 @@ class OrderController extends Controller
                 'total_amount' => $totalAmount,
                 'payment_method' => 'credit_card',
                 'payment_status' => 'paid',
+                'promotion_id' => $promotionId,
+                'discount_amount' => $discountAmount,
+                'promo_code' => $validated['promo_code'] ?? null,
             ]);
 
             foreach ($validated['items'] as $item) {
@@ -119,6 +154,11 @@ class OrderController extends Controller
                     'price' => $item['price'],
                     'subtotal' => $item['quantity'] * $item['price'],
                 ]);
+            }
+
+            // Increment promotion usage count
+            if ($promotion) {
+                $promotion->incrementUsage();
             }
 
             return response()->json([
@@ -134,6 +174,9 @@ class OrderController extends Controller
             'total_amount' => $totalAmount,
             'payment_method' => $validated['payment_method'] ?? 'cod',
             'payment_status' => 'pending',
+            'promotion_id' => $promotionId,
+            'discount_amount' => $discountAmount,
+            'promo_code' => $validated['promo_code'] ?? null,
         ]);
 
         foreach ($validated['items'] as $item) {
@@ -146,6 +189,11 @@ class OrderController extends Controller
                 'price' => $item['price'],
                 'subtotal' => $item['quantity'] * $item['price'],
             ]);
+        }
+
+        // Increment promotion usage count
+        if ($promotion) {
+            $promotion->incrementUsage();
         }
 
         // For COD, redirect to my-orders
@@ -267,6 +315,8 @@ class OrderController extends Controller
                     'id' => $order->id,
                     'status' => $order->status,
                     'total_amount' => (float) $order->total_amount,
+                    'discount_amount' => (float) $order->discount_amount,
+                    'promo_code' => $order->promo_code,
                     'created_at' => $order->created_at->diffForHumans(),
                     'created_date' => $order->created_at->format('M d, Y'),
                     'distributor_name' => $order->distributor->name ?? 'N/A',

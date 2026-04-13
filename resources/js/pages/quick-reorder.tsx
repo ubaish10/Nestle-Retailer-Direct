@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronLeft, Plus, Minus, ShoppingCart, Users, ChevronDown, CreditCard, DollarSign, Warehouse, Banknote } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, ShoppingCart, Users, ChevronDown, CreditCard, DollarSign, Warehouse, Banknote, Tag, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect, useRef } from 'react';
@@ -157,13 +157,93 @@ export default function QuickReorder({ products, distributors }: Props) {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showCreditCardModal, setShowCreditCardModal] = useState(false);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cod' | 'paypal' | 'credit_card'>('cod');
-    
+
+    // Promo code state
+    const [promoCode, setPromoCode] = useState('');
+    const [appliedPromo, setAppliedPromo] = useState<{
+        id: number;
+        title: string;
+        promo_code: string;
+        discount_type: string;
+        discount_value: number;
+        discount_amount: number;
+    } | null>(null);
+    const [promoError, setPromoError] = useState<string | null>(null);
+    const [validatingPromo, setValidatingPromo] = useState(false);
+
     // Credit card form state
     const [cardNumber, setCardNumber] = useState('');
     const [cardExpiry, setCardExpiry] = useState('');
     const [cardCvv, setCardCvv] = useState('');
     const [cardName, setCardName] = useState('');
     const cardNumberRef = useRef<HTMLInputElement>(null);
+
+    // Promo code validation
+    const handleValidatePromoCode = async () => {
+        if (!promoCode.trim()) {
+            setPromoError('Please enter a promo code');
+            return;
+        }
+
+        setValidatingPromo(true);
+        setPromoError(null);
+
+        const itemsToOrder = orderItems.filter((item) => item && item.quantity > 0);
+        const orderTotal = itemsToOrder.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+
+        try {
+            const response = await fetch('/api/promo-code/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    promo_code: promoCode.toUpperCase(),
+                    product_ids: itemsToOrder.map(item => item.id).filter(Boolean),
+                    order_total: orderTotal,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                setAppliedPromo(data.promotion);
+                setPromoError(null);
+                toast({
+                    title: 'Promo Applied!',
+                    description: `${data.promotion.title} - Discount applied to your order`,
+                });
+            } else {
+                setAppliedPromo(null);
+                setPromoError(data.message || 'Invalid promo code');
+                toast({
+                    title: 'Invalid Promo Code',
+                    description: data.message || 'This promo code is invalid or expired.',
+                    variant: 'destructive',
+                });
+            }
+        } catch (err) {
+            setPromoError('Failed to validate promo code');
+            toast({
+                title: 'Error',
+                description: 'Failed to validate promo code. Please try again.',
+                variant: 'destructive',
+            });
+        } finally {
+            setValidatingPromo(false);
+        }
+    };
+
+    const handleRemovePromo = () => {
+        setPromoCode('');
+        setAppliedPromo(null);
+        setPromoError(null);
+        toast({
+            title: 'Promo Removed',
+            description: 'Promo code has been removed from your order.',
+        });
+    };
 
     // Fetch distributor inventory when distributor is selected
     useEffect(() => {
@@ -286,6 +366,7 @@ export default function QuickReorder({ products, distributors }: Props) {
         const orderData = {
             distributor_id: selectedDistributor.id,
             payment_method: selectedPaymentMethod,
+            promo_code: appliedPromo ? appliedPromo.promo_code : null,
             items: itemsToOrder.map((item) => ({
                 product_id: item.id,
                 product_name: item.name,
@@ -445,6 +526,7 @@ export default function QuickReorder({ products, distributors }: Props) {
         const orderData = {
             distributor_id: selectedDistributor.id,
             payment_method: 'credit_card',
+            promo_code: appliedPromo ? appliedPromo.promo_code : null,
             items: itemsToOrder.map((item) => ({
                 product_id: item.id,
                 product_name: item.name,
@@ -501,6 +583,10 @@ export default function QuickReorder({ products, distributors }: Props) {
     const totalAmount = orderItems
         .filter(item => item != null)
         .reduce((acc, item) => acc + ((item?.quantity || 0) * (item?.price || 0)), 0);
+
+    // Calculate discounted total
+    const discountAmount = appliedPromo ? appliedPromo.discount_amount : 0;
+    const discountedTotal = totalAmount - discountAmount;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#f5f7fa] to-[#e8ecf1]">
@@ -657,10 +743,76 @@ export default function QuickReorder({ products, distributors }: Props) {
                                     <span className="text-xs md:text-sm text-gray-600">Total Items</span>
                                     <span className="font-semibold text-sm md:text-base">{totalItems}</span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-xs md:text-sm text-gray-600">Total Amount</span>
-                                    <span className="font-bold text-[#00447C] text-lg md:text-xl">LKR {totalAmount.toFixed(2)}</span>
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-xs md:text-sm text-gray-600">Subtotal</span>
+                                    <span className="font-semibold text-sm md:text-base">LKR {totalAmount.toFixed(2)}</span>
                                 </div>
+                                {appliedPromo && (
+                                    <div className="flex justify-between items-center mb-2 text-emerald-600">
+                                        <span className="text-xs md:text-sm">Discount ({appliedPromo.discount_type === 'percentage' ? `${appliedPromo.discount_value}%` : `LKR ${appliedPromo.discount_value.toFixed(2)}`})</span>
+                                        <span className="font-semibold text-sm md:text-base">- LKR {discountAmount.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between items-center pt-2 border-t">
+                                    <span className="font-semibold text-sm md:text-base">Total Amount</span>
+                                    <span className="font-bold text-[#00447C] text-lg md:text-xl">LKR {discountedTotal.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            {/* Promo Code Input */}
+                            <div className="bg-blue-50 rounded-lg p-3 md:p-4 border border-blue-200">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Tag className="h-4 w-4 text-[#00447C]" />
+                                    <span className="text-sm font-semibold text-[#00447C]">Promo Code</span>
+                                </div>
+                                {!appliedPromo ? (
+                                    <div className="space-y-2">
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={promoCode}
+                                                onChange={(e) => {
+                                                    setPromoCode(e.target.value.toUpperCase());
+                                                    setPromoError(null);
+                                                }}
+                                                placeholder="Enter promo code"
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm uppercase focus:outline-none focus:ring-2 focus:ring-[#00447C]"
+                                                disabled={validatingPromo}
+                                            />
+                                            <button
+                                                onClick={handleValidatePromoCode}
+                                                disabled={validatingPromo || !promoCode.trim()}
+                                                className="px-4 py-2 bg-[#00447C] text-white rounded-lg text-sm font-semibold hover:bg-[#003d6f] disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {validatingPromo ? 'Checking...' : 'Apply'}
+                                            </button>
+                                        </div>
+                                        {promoError && (
+                                            <p className="text-xs text-red-600 flex items-center gap-1">
+                                                <X className="h-3 w-3" />
+                                                {promoError}
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-between bg-emerald-50 rounded-lg p-2 border border-emerald-200">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-semibold text-emerald-800">{appliedPromo.title}</span>
+                                                <span className="text-xs bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded-full">
+                                                    {appliedPromo.discount_type === 'percentage' ? `${appliedPromo.discount_value}% OFF` : `LKR ${appliedPromo.discount_value.toFixed(2)} OFF`}
+                                                </span>
+                                            </div>
+                                            <code className="text-xs font-mono text-emerald-700">{appliedPromo.promo_code}</code>
+                                        </div>
+                                        <button
+                                            onClick={handleRemovePromo}
+                                            className="p-1 hover:bg-red-100 rounded text-red-600"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-2">
@@ -754,9 +906,19 @@ export default function QuickReorder({ products, distributors }: Props) {
                                     <span className="text-xs md:text-sm text-gray-600">Total Items</span>
                                     <span className="font-semibold text-sm md:text-base">{totalItems}</span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-xs md:text-sm text-gray-600">Total Amount</span>
-                                    <span className="font-bold text-purple-600 text-lg md:text-xl">LKR {totalAmount.toFixed(2)}</span>
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-xs md:text-sm text-gray-600">Subtotal</span>
+                                    <span className="font-semibold text-sm md:text-base">LKR {totalAmount.toFixed(2)}</span>
+                                </div>
+                                {appliedPromo && (
+                                    <div className="flex justify-between items-center mb-2 text-emerald-600">
+                                        <span className="text-xs md:text-sm">Discount ({appliedPromo.discount_type === 'percentage' ? `${appliedPromo.discount_value}%` : `LKR ${appliedPromo.discount_value.toFixed(2)}`})</span>
+                                        <span className="font-semibold text-sm md:text-base">- LKR {discountAmount.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between items-center pt-2 border-t">
+                                    <span className="font-semibold text-sm md:text-base">Total Amount</span>
+                                    <span className="font-bold text-purple-600 text-lg md:text-xl">LKR {discountedTotal.toFixed(2)}</span>
                                 </div>
                             </div>
 

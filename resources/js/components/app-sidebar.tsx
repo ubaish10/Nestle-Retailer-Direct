@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { UserCog } from 'lucide-react';
+import { UserCog, Tag } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -18,6 +18,11 @@ const mainNavItems: NavItem[] = [
         title: 'User Approvals',
         href: '/dashboard/user-approvals',
         icon: UserCog,
+    },
+    {
+        title: 'Promotions',
+        href: '/promotions',
+        icon: Tag,
     },
 ];
 

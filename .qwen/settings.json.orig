@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(C:\\Users\\LAPTOP i7\\Desktop\\nestle ubaish\\Nestle ubaish\\Nestle-Retailer-Direct\\resources\\js\\components\\ui/**)"
+    ]
+  }
+}

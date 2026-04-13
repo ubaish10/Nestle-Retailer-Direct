@@ -77,7 +77,7 @@ class ComplaintController extends Controller
             'products.*.product_image' => 'nullable|string',
             'products.*.quantity' => 'required|integer|min:1',
             'description' => 'required|string|max:1000',
-            'products.*.proof_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'products.*.proof_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ], [
             'order_id.required' => 'Please select an order.',
             'products.required' => 'Please select at least one product.',
@@ -87,6 +87,7 @@ class ComplaintController extends Controller
             'products.*.quantity.min' => 'Quantity must be at least 1 for all products.',
             'description.required' => 'Please provide a description of the damage.',
             'description.max' => 'Description must not exceed 1000 characters.',
+            'products.*.proof_image.required' => 'Please upload a proof image for each product.',
             'products.*.proof_image.image' => 'Please upload valid image files for proof.',
             'products.*.proof_image.max' => 'Each image size must not exceed 2MB.',
         ]);

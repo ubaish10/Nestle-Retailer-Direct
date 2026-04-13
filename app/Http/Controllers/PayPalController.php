@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Promotion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -47,6 +48,27 @@ class PayPalController extends Controller
             $totalAmount += $item['quantity'] * $item['price'];
         }
 
+        // Apply promotion discount if promo code is provided
+        $promotion = null;
+        $discountAmount = 0;
+        $promotionId = null;
+        $promoCode = $orderData['promo_code'] ?? null;
+
+        if ($promoCode) {
+            $promotion = Promotion::where('promo_code', strtoupper($promoCode))->first();
+
+            if ($promotion && $promotion->isValid()) {
+                $productIds = array_filter(array_column($orderData['items'], 'product_id'));
+                $discountAmount = $promotion->calculateDiscount($totalAmount, $productIds);
+
+                if ($discountAmount > 0) {
+                    $promotionId = $promotion->id;
+                    $totalAmount -= $discountAmount;
+                    $totalAmount = max(0, $totalAmount);
+                }
+            }
+        }
+
         // Store order data in session for later creation after payment success
         session([
             'pending_paypal_order' => [
@@ -54,6 +76,9 @@ class PayPalController extends Controller
                 'payment_method' => $orderData['payment_method'] ?? 'paypal',
                 'items' => $orderData['items'],
                 'total_amount' => $totalAmount,
+                'promotion_id' => $promotionId,
+                'discount_amount' => $discountAmount,
+                'promo_code' => $promoCode,
             ]
         ]);
 
@@ -153,6 +178,9 @@ class PayPalController extends Controller
                 'payment_method' => $orderData['payment_method'],
                 'payment_status' => 'paid',
                 'paypal_transaction_id' => 'MOCK-' . strtoupper(uniqid()),
+                'promotion_id' => $orderData['promotion_id'] ?? null,
+                'discount_amount' => $orderData['discount_amount'] ?? 0,
+                'promo_code' => $orderData['promo_code'] ?? null,
             ]);
 
             // Create order items
@@ -166,6 +194,14 @@ class PayPalController extends Controller
                     'price' => $item['price'],
                     'subtotal' => $item['quantity'] * $item['price'],
                 ]);
+            }
+
+            // Increment promotion usage count
+            if (isset($orderData['promotion_id'])) {
+                $promotion = Promotion::find($orderData['promotion_id']);
+                if ($promotion) {
+                    $promotion->incrementUsage();
+                }
             }
 
             // Clear session data
@@ -194,6 +230,9 @@ class PayPalController extends Controller
                     'payment_method' => $orderData['payment_method'],
                     'payment_status' => 'paid',
                     'paypal_transaction_id' => $response['id'] ?? null,
+                    'promotion_id' => $orderData['promotion_id'] ?? null,
+                    'discount_amount' => $orderData['discount_amount'] ?? 0,
+                    'promo_code' => $orderData['promo_code'] ?? null,
                 ]);
 
                 // Create order items
@@ -207,6 +246,14 @@ class PayPalController extends Controller
                         'price' => $item['price'],
                         'subtotal' => $item['quantity'] * $item['price'],
                     ]);
+                }
+
+                // Increment promotion usage count
+                if (isset($orderData['promotion_id'])) {
+                    $promotion = Promotion::find($orderData['promotion_id']);
+                    if ($promotion) {
+                        $promotion->incrementUsage();
+                    }
                 }
 
                 // Clear session data

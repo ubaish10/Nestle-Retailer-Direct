@@ -17,6 +17,9 @@ class Order extends Model
         'payment_method',
         'payment_status',
         'paypal_transaction_id',
+        'promotion_id',
+        'discount_amount',
+        'promo_code',
     ];
 
     public function user(): BelongsTo
@@ -32,6 +35,11 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function promotion(): BelongsTo
+    {
+        return $this->belongsTo(Promotion::class);
     }
 
     public function scopePending($query)
