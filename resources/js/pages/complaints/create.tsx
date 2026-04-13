@@ -141,6 +141,10 @@ export default function CreateComplaint({ orders }: PageProps) {
                 toast({ title: 'Validation Error', description: `Quantity for ${product.product_name} cannot exceed ${product.max_quantity}.`, variant: 'destructive' });
                 return;
             }
+            if (!product.proof_image) {
+                toast({ title: 'Validation Error', description: `Please upload a proof image for ${product.product_name}.`, variant: 'destructive' });
+                return;
+            }
         }
         if (!description.trim()) {
             toast({ title: 'Validation Error', description: 'Please provide a description of the damage.', variant: 'destructive' });
@@ -389,7 +393,7 @@ export default function CreateComplaint({ orders }: PageProps) {
                                                         {/* Proof Image */}
                                                         <div>
                                                             <label className="block text-xs font-semibold text-slate-700 mb-2">
-                                                                Proof Image
+                                                                Proof Image <span className="text-red-500">*</span>
                                                             </label>
                                                             <div
                                                                 className="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center cursor-pointer hover:border-[#00447C] transition-colors h-[78px] flex items-center justify-center"

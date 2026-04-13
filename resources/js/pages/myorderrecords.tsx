@@ -1,5 +1,5 @@
 import { Head, usePage } from '@inertiajs/react';
-import { Clock, Package, Calendar, DollarSign, ChevronRight, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, Package, Calendar, DollarSign, ChevronRight, AlertCircle, CheckCircle, XCircle, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,8 @@ interface Order {
     id: number;
     status: string;
     total_amount: number;
+    discount_amount: number;
+    promo_code: string | null;
     created_at: string;
     created_date: string;
     distributor_name: string;
@@ -424,12 +426,36 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
                         </div>
                     </div>
 
-                    {/* Total Amount */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 md:pt-4 border-t border-slate-200/50">
-                        <div>
-                            <div className="text-xs text-slate-500 font-medium mb-0.5">Total Amount</div>
-                            <div className="text-xl md:text-2xl font-bold bg-gradient-to-br from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                                LKR {order.total_amount.toFixed(2)}
+                    {/* Discount and Total Amount */}
+                    <div className="pt-3 md:pt-4 border-t border-slate-200/50 space-y-2">
+                        {order.discount_amount > 0 && order.promo_code && (
+                            <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <Tag className="h-4 w-4 text-emerald-600" />
+                                        <span className="text-xs font-semibold text-emerald-800">Promo Applied</span>
+                                    </div>
+                                    <Badge className="bg-emerald-200 text-emerald-800 text-xs">
+                                        {order.promo_code}
+                                    </Badge>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-emerald-700">Discount Amount</span>
+                                    <span className="font-bold text-emerald-700">- LKR {order.discount_amount.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        )}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div>
+                                {order.discount_amount > 0 && order.promo_code && (
+                                    <div className="text-xs text-slate-500 font-medium mb-0.5">
+                                        Original: LKR {(order.total_amount + order.discount_amount).toFixed(2)}
+                                    </div>
+                                )}
+                                <div className="text-xs text-slate-500 font-medium mb-0.5">Final Amount</div>
+                                <div className="text-xl md:text-2xl font-bold bg-gradient-to-br from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                                    LKR {order.total_amount.toFixed(2)}
+                                </div>
                             </div>
                         </div>
                     </div>
