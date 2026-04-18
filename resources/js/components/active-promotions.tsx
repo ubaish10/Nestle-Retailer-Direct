@@ -123,7 +123,7 @@ export default function ActivePromotions({ compact = false }: ActivePromotionsPr
                         ))}
                         {promotions.length > 3 && (
                             <Button variant="outline" size="sm" asChild className="w-full">
-                                <a href="/promotions">
+                                <a href="/retailer/promotions">
                                     View All Promotions ({promotions.length})
                                 </a>
                             </Button>

@@ -78,6 +78,7 @@ Route::middleware(['auth', 'verified', 'distributor'])->group(function () {
 // Retailer inventory routes
 Route::middleware(['auth', 'verified', 'retailer'])->group(function () {
     Route::get('/retailer/inventory', [RetailerInventoryController::class, 'index'])->name('retailer.inventory');
+    Route::get('/retailer/promotions', [PromotionController::class, 'retailerPromotions'])->name('retailer.promotions.index');
     
     // Retailer complaint routes
     Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
