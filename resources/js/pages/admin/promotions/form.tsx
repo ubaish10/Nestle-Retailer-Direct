@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem, Promotion, Product } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { QRCodeSVG } from 'qrcode.react';
+
 
 interface ProductOption {
     id: number;
@@ -252,11 +252,7 @@ export default function PromotionForm({ promotion, products }: Props) {
                                         </Button>
                                         {showQR && (
                                             <div className="mt-4 flex flex-col items-center gap-3 rounded-lg border p-6">
-                                                <QRCodeSVG
-                                                    value={promoCode}
-                                                    size={180}
-                                                    level="M"
-                                                />
+
                                                 <code className="rounded bg-muted px-3 py-2 text-lg font-mono">
                                                     {promoCode}
                                                 </code>

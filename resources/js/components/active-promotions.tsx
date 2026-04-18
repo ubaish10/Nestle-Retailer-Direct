@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tag, Calendar, Percent, DollarSign, Copy, QrCode, X } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+
 import {
     Dialog,
     DialogContent,
@@ -243,11 +243,7 @@ export default function ActivePromotions({ compact = false }: ActivePromotionsPr
                     <div className="flex flex-col items-center gap-4 py-4">
                         {selectedPromo && (
                             <>
-                                <QRCodeSVG
-                                    value={selectedPromo.promo_code}
-                                    size={200}
-                                    level="M"
-                                />
+
                                 <div className="text-center">
                                     <p className="text-sm font-medium">Promo Code:</p>
                                     <code className="mt-1 rounded bg-muted px-3 py-2 text-lg font-mono">
