@@ -232,14 +232,14 @@ export default function PromotionsIndex({ promotions, stats }: Props) {
                                                     <div className="font-medium">
                                                         {promotion.discount_type === 'percentage'
                                                             ? `${promotion.discount_value}%`
-                                                            : `$${promotion.discount_value.toFixed(2)}`}
+                                                            : `LKR ${promotion.discount_value.toFixed(2)}`}
                                                     </div>
                                                 </td>
                                                 <td className="py-3 px-4">
                                                     {getStatusBadge(promotion.status)}
                                                     {promotion.days_remaining !== null && promotion.status === 'active' && (
                                                         <div className="mt-1 text-xs text-muted-foreground">
-                                                            {promotion.days_remaining} days left
+                                                            {Math.floor(promotion.days_remaining)} days left
                                                         </div>
                                                     )}
                                                 </td>

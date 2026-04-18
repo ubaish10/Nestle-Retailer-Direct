@@ -295,7 +295,7 @@ export default function PromotionForm({ promotion, products }: Props) {
                                                 Percentage (%)
                                             </SelectItem>
                                             <SelectItem value="fixed">
-                                                Fixed Amount ($)
+                                                Fixed Amount (LKR)
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -307,7 +307,7 @@ export default function PromotionForm({ promotion, products }: Props) {
                                         {discountType === 'percentage' ? (
                                             <Percent className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                         ) : (
-                                            <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                            <span className="absolute left-3 top-3 text-muted-foreground text-sm">LKR</span>
                                         )}
                                         <Input
                                             id="discount_value"
@@ -338,7 +338,7 @@ export default function PromotionForm({ promotion, products }: Props) {
                                         Minimum Order Amount (Optional)
                                     </Label>
                                     <div className="relative">
-                                        <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                        <span className="absolute left-3 top-3 text-muted-foreground text-sm">LKR</span>
                                         <Input
                                             id="minimum_order_amount"
                                             type="number"
@@ -366,7 +366,7 @@ export default function PromotionForm({ promotion, products }: Props) {
                                             Maximum Discount Cap (Optional)
                                         </Label>
                                         <div className="relative">
-                                            <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                            <span className="absolute left-3 top-3 text-muted-foreground text-sm">LKR</span>
                                             <Input
                                                 id="maximum_discount_amount"
                                                 type="number"
@@ -475,7 +475,7 @@ export default function PromotionForm({ promotion, products }: Props) {
                                             >
                                                 <span>{product.name}</span>
                                                 <span className="text-sm text-muted-foreground">
-                                                    ${product.price.toFixed(2)}
+                                                    LKR {product.price.toFixed(2)}
                                                 </span>
                                             </Label>
                                         </div>

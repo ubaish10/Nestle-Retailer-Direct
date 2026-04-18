@@ -169,7 +169,7 @@ export default function NestleSystemAnalysis({
                                                                 <div className="flex items-center gap-1 mt-1">
                                                                     <Calendar className="h-3 w-3 text-muted-foreground" />
                                                                     <span className="text-[10px] text-muted-foreground">
-                                                                        {promo.days_remaining} days left
+                                                                        {Math.floor(promo.days_remaining)} days left
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -311,7 +311,7 @@ export default function NestleSystemAnalysis({
                                                                 <div className="flex items-center gap-1 mt-2">
                                                                     <Calendar className="h-3 w-3 text-muted-foreground" />
                                                                     <span className="text-xs text-muted-foreground">
-                                                                        {promo.days_remaining} days remaining
+                                                                        {Math.floor(promo.days_remaining)} days remaining
                                                                     </span>
                                                                 </div>
                                                             </div>

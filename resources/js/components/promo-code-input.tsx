@@ -54,7 +54,7 @@ export default function PromoCodeInput({ orderTotal, productIds, onPromoApplied 
                 onPromoApplied(data.promotion);
                 toast({
                     title: 'Promo Applied!',
-                    description: `${data.promotion.title} - ${data.promotion.discount_type === 'percentage' ? `${data.promotion.discount_value}%` : `$${data.promotion.discount_value.toFixed(2)}`} discount applied`,
+                    description: `${data.promotion.title} - ${data.promotion.discount_type === 'percentage' ? `${data.promotion.discount_value}%` : `LKR ${data.promotion.discount_value.toFixed(2)}`} discount applied`,
                 });
             } else {
                 setError(data.message || 'Invalid promo code');
@@ -147,10 +147,10 @@ export default function PromoCodeInput({ orderTotal, productIds, onPromoApplied 
                                     <p className="mt-1 text-sm text-muted-foreground">
                                         {appliedPromotion.discount_type === 'percentage'
                                             ? `${appliedPromotion.discount_value}% discount`
-                                            : `$${appliedPromotion.discount_value.toFixed(2)} discount`}
+                                            : `LKR ${appliedPromotion.discount_value.toFixed(2)} discount`}
                                         {appliedPromotion.discount_amount > 0 && (
                                             <span className="ml-2 font-semibold text-emerald-600">
-                                                (-$${appliedPromotion.discount_amount.toFixed(2)})
+                                                (-LKR ${appliedPromotion.discount_amount.toFixed(2)})
                                             </span>
                                         )}
                                     </p>
