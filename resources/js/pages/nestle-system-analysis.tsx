@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import GuestLayout from '@/layouts/guest-layout';
 import {
     ShoppingCart,
@@ -127,11 +127,8 @@ export default function NestleSystemAnalysis({
                         {/* Row 2 - Promotions + Coming Soon */}
                         <div className="grid grid-cols-2 gap-3">
                             {/* Promotions Card with Dropdown */}
-                            <div className="relative" ref={dropdownRef}>
-                                <button
-                                    onClick={() => setShowPromotions(!showPromotions)}
-                                    className="group flex h-24 w-full flex-col items-center justify-center rounded-xl bg-white/90 p-2 text-center shadow-lg backdrop-blur-sm border border-white/50 dark:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] hover:bg-white cursor-pointer"
-                                >
+                            <div className="relative">
+                                <Link href="/retailer/promotions" className="group flex h-24 w-full flex-col items-center justify-center rounded-xl bg-white/90 p-2 text-center shadow-lg backdrop-blur-sm border border-white/50 dark:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] hover:bg-white cursor-pointer">
                                     <div className="transform transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
                                         <Tag className="mb-1.5 h-5 w-5 text-primary" />
                                     </div>
@@ -144,7 +141,7 @@ export default function NestleSystemAnalysis({
                                             </svg>
                                         </span>
                                     </div>
-                                </button>
+                                </Link>
 
                                 {/* Mobile Promotions Dropdown */}
                                 {showPromotions && (
@@ -251,11 +248,8 @@ export default function NestleSystemAnalysis({
                             </a>
 
                             {/* Promotions Card with Dropdown */}
-                            <div className="relative" ref={dropdownRef}>
-                                <button
-                                    onClick={() => setShowPromotions(!showPromotions)}
-                                    className="group flex h-56 w-72 flex-col items-center justify-center rounded-3xl bg-white/90 p-8 text-center shadow-2xl backdrop-blur-sm border border-white/50 dark:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] hover:bg-white cursor-pointer"
-                                >
+                            <div className="relative">
+                                <Link href="/retailer/promotions" className="group flex h-56 w-72 flex-col items-center justify-center rounded-3xl bg-white/90 p-8 text-center shadow-2xl backdrop-blur-sm border border-white/50 dark:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] hover:bg-white cursor-pointer">
                                     <div className="transform transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-2">
                                         <Tag className="mb-4 h-14 w-14 text-primary" />
                                     </div>
@@ -268,7 +262,7 @@ export default function NestleSystemAnalysis({
                                             </svg>
                                         </span>
                                     </div>
-                                </button>
+                                </Link>
 
                                 {/* Desktop Promotions Dropdown */}
                                 {showPromotions && (

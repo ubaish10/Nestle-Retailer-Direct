@@ -302,6 +302,14 @@ class PromotionController extends Controller
     }
 
     /**
+     * Retailer promotions page
+     */
+    public function retailerPromotions()
+    {
+        return inertia('retailer/promotions');
+    }
+
+    /**
      * Transform promotion data for frontend.
      */
     private function transformPromotion($promotion)
