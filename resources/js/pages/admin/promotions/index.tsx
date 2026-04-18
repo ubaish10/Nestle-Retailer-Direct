@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem, Promotion } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { QRCodeSVG } from 'qrcode.react';
+
 import {
     Dialog,
     DialogContent,
@@ -319,11 +319,6 @@ export default function PromotionsIndex({ promotions, stats }: Props) {
                     <div className="flex flex-col items-center gap-4 py-4">
                         {selectedPromo && (
                             <>
-                                <QRCodeSVG
-                                    value={selectedPromo.promo_code}
-                                    size={200}
-                                    level="M"
-                                />
                                 <div className="text-center">
                                     <p className="text-sm font-medium">Promo Code:</p>
                                     <code className="mt-1 rounded bg-muted px-3 py-2 text-lg font-mono">
