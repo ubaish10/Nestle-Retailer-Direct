@@ -98,12 +98,12 @@ export default function ActivePromotions({ compact = false }: ActivePromotionsPr
                                         <Badge variant="secondary" className="text-xs">
                                             {promotion.discount_type === 'percentage'
                                                 ? `${promotion.discount_value}% OFF`
-                                                : `$${promotion.discount_value.toFixed(2)} OFF`}
+                                                : `LKR ${promotion.discount_value.toFixed(2)} OFF`}
                                         </Badge>
                                     </div>
                                     <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                                         <Calendar className="h-3 w-3" />
-                                        <span>{promotion.days_remaining} days remaining</span>
+                                        <span>{Math.floor(promotion.days_remaining)} days remaining</span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -170,14 +170,14 @@ export default function ActivePromotions({ compact = false }: ActivePromotionsPr
                                     )}
                                     {promotion.discount_type === 'percentage'
                                         ? `${promotion.discount_value}%`
-                                        : `$${promotion.discount_value.toFixed(2)}`}
+                                        : `LKR ${promotion.discount_value.toFixed(2)}`}
                                 </Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             {promotion.minimum_order_amount && (
                                 <p className="text-sm text-muted-foreground">
-                                    Minimum order: ${promotion.minimum_order_amount.toFixed(2)}
+                                    Minimum order: LKR {promotion.minimum_order_amount.toFixed(2)}
                                 </p>
                             )}
 
@@ -201,7 +201,7 @@ export default function ActivePromotions({ compact = false }: ActivePromotionsPr
 
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Calendar className="h-4 w-4" />
-                                <span>{promotion.days_remaining} days remaining</span>
+                                <span>{Math.floor(promotion.days_remaining)} days remaining</span>
                             </div>
 
                             <div className="flex gap-2 pt-2">
