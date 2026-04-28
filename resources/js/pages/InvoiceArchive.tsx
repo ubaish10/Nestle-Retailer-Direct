@@ -201,7 +201,6 @@ function InvoiceCard({ invoice, index, onDownload, onView }: { invoice: Invoice;
             className="group"
             style={{ animationDelay: `${index * 100}ms` }}
         >
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-blue-600/5 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative bg-white rounded-2xl border border-blue-200/50 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
                 {/* Top accent bar */}
                 <div className="h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600"></div>

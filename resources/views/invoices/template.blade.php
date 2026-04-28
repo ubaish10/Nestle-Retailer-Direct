@@ -245,9 +245,6 @@
         <div class="footer">
             <p><strong>Terms & Conditions:</strong> Payment is due within 30 days of invoice date. Late payments may incur additional charges.</p>
             <p style="margin-top: 15px;">Thank you for your business! | Generated on {{ $date }}</p>
-            <p style="margin-top: 15px; color: #999;">
-                This is a computer-generated invoice and does not require a signature.
-            </p>
         </div>
     </div>
 </body>
