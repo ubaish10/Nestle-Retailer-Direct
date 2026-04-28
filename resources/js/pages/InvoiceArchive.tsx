@@ -1,5 +1,5 @@
 import { Head, usePage } from '@inertiajs/react';
-import { Package, Calendar, DollarSign, ChevronRight, Download, Eye, CheckCircle } from 'lucide-react';
+import { Package, Calendar, DollarSign, ChevronRight, Download, Eye, CheckCircle, ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -47,6 +47,7 @@ export default function InvoiceArchive({ invoices, stats }: Props) {
     const { toast } = useToast();
     const { flash } = usePage<{ flash?: { success?: string } }>().props;
     const [filter, setFilter] = useState('all');
+    const [expandedInvoices, setExpandedInvoices] = useState<Set<number>>(new Set());
 
     // Show success toast if there's a flash message
     useEffect(() => {
@@ -66,6 +67,18 @@ export default function InvoiceArchive({ invoices, stats }: Props) {
 
     const viewInvoice = (invoiceNumber: string) => {
         window.open(`/invoices/${invoiceNumber}/view`, '_blank');
+    };
+
+    const toggleExpanded = (invoiceId: number) => {
+        setExpandedInvoices(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(invoiceId)) {
+                newSet.delete(invoiceId);
+            } else {
+                newSet.add(invoiceId);
+            }
+            return newSet;
+        });
     };
 
     return (
@@ -166,13 +179,21 @@ export default function InvoiceArchive({ invoices, stats }: Props) {
                     </div>
 
 
-                    {/* Invoices List */}
-                    {filteredInvoices.length > 0 ? (
-                        <div className="space-y-4">
-                            {filteredInvoices.map((invoice, index) => (
-                                <InvoiceCard key={invoice.id} invoice={invoice} index={index} onDownload={downloadInvoice} onView={viewInvoice} />
-                            ))}
-                        </div>
+                     {/* Invoices List */}
+                     {filteredInvoices.length > 0 ? (
+                         <div className="space-y-4">
+                             {filteredInvoices.map((invoice, index) => (
+                                 <InvoiceCard
+                                    key={invoice.id}
+                                    invoice={invoice}
+                                    index={index}
+                                    onDownload={downloadInvoice}
+                                    onView={viewInvoice}
+                                    isExpanded={expandedInvoices.has(invoice.id)}
+                                    onToggleExpanded={() => toggleExpanded(invoice.id)}
+                                />
+                             ))}
+                         </div>
                     ) : (
                         <div className="relative bg-white rounded-2xl border border-slate-200/50 shadow-sm overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent"></div>
@@ -195,7 +216,21 @@ export default function InvoiceArchive({ invoices, stats }: Props) {
 }
 
 // Invoice Card Component
-function InvoiceCard({ invoice, index, onDownload, onView }: { invoice: Invoice; index: number; onDownload: (invoiceNumber: string) => void; onView: (invoiceNumber: string) => void }) {
+function InvoiceCard({
+    invoice,
+    index,
+    onDownload,
+    onView,
+    isExpanded,
+    onToggleExpanded
+}: {
+    invoice: Invoice;
+    index: number;
+    onDownload: (invoiceNumber: string) => void;
+    onView: (invoiceNumber: string) => void;
+    isExpanded: boolean;
+    onToggleExpanded: () => void;
+}) {
     return (
         <div
             className="group"
@@ -206,7 +241,11 @@ function InvoiceCard({ invoice, index, onDownload, onView }: { invoice: Invoice;
                 <div className="h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600"></div>
 
                 <div className="p-4 md:p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3 md:mb-4">
+                    {/* Clickable Header */}
+                    <div
+                        className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3 md:mb-4 cursor-pointer"
+                        onClick={onToggleExpanded}
+                    >
                         <div className="flex items-center gap-3 md:gap-4 flex-1">
                             <div className="relative flex-shrink-0">
                                 <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl blur-md opacity-50"></div>
@@ -234,47 +273,65 @@ function InvoiceCard({ invoice, index, onDownload, onView }: { invoice: Invoice;
                             <Badge className={getStatusBadgeClass(invoice.status)} variant="outline">
                                 {invoice.status}
                             </Badge>
+                            <ChevronDown
+                                className={`h-5 w-5 text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+                            />
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-3 md:p-4 mb-3 md:mb-4 border border-slate-200/50">
-                        <div className="text-xs font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                            <Package className="h-3.5 w-3.5" />
-                            Details
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <span className="text-xs text-slate-500">Distributor</span>
-                                <div className="font-medium text-slate-900 text-sm truncate">{invoice.distributor_name}</div>
-                            </div>
-                            <div>
-                                <span className="text-xs text-slate-500">Total Amount</span>
-                                <div className="font-bold text-slate-900 text-sm">LKR {invoice.total_amount.toFixed(2)}</div>
-                            </div>
-                            {invoice.discount_amount > 0 && (
-                                <div className="col-span-2">
-                                    <span className="text-xs text-emerald-600">Discount</span>
-                                    <div className="text-emerald-600 font-medium text-sm">- LKR {invoice.discount_amount.toFixed(2)}</div>
+                    {/* Expandable Details and Actions */}
+                    <div
+                        className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                            isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                        }`}
+                    >
+                        <div className="pt-0">
+                            <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-3 md:p-4 mb-3 md:mb-4 border border-slate-200/50">
+                                <div className="text-xs font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                                    <Package className="h-3.5 w-3.5" />
+                                    Details
                                 </div>
-                            )}
-                        </div>
-                    </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <span className="text-xs text-slate-500">Distributor</span>
+                                        <div className="font-medium text-slate-900 text-sm truncate">{invoice.distributor_name}</div>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-slate-500">Total Amount</span>
+                                        <div className="font-bold text-slate-900 text-sm">LKR {invoice.total_amount.toFixed(2)}</div>
+                                    </div>
+                                    {invoice.discount_amount > 0 && (
+                                        <div className="col-span-2">
+                                            <span className="text-xs text-emerald-600">Discount</span>
+                                            <div className="text-emerald-600 font-medium text-sm">- LKR {invoice.discount_amount.toFixed(2)}</div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
 
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => onView(invoice.invoice_number)}
-                            className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                        >
-                            <Eye className="h-4 w-4" />
-                            View
-                        </button>
-                        <button
-                            onClick={() => onDownload(invoice.invoice_number)}
-                            className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                        >
-                            <Download className="h-4 w-4" />
-                            Download
-                        </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onView(invoice.invoice_number);
+                                    }}
+                                    className="flex-1 flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                    View
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDownload(invoice.invoice_number);
+                                    }}
+                                    className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                    <Download className="h-4 w-4" />
+                                    Download
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
