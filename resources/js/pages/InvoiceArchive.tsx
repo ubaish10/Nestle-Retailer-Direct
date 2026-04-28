@@ -4,28 +4,22 @@ import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
-interface Props {
-    invoices: Invoice[];
-    stats: {
-        total_invoices: number;
-        total_spent: number;
-        paid_invoices: number;
-    };
+interface OrderItem {
+    product_name: string;
+    quantity: number;
 }
 
-function getStatusBadgeClass(status: string): string {
-    switch (status) {
-        case 'paid':
-            return 'bg-emerald-500 text-white';
-        case 'pending':
-            return 'bg-amber-500 text-white';
-        case 'refunded':
-            return 'bg-blue-500 text-white';
-        case 'cancelled':
-            return 'bg-red-500 text-white';
-        default:
-            return 'bg-gray-500 text-white';
-    }
+interface Invoice {
+    id: number;
+    invoice_number: string;
+    order_id: number;
+    invoice_date: string;
+    total_amount: number;
+    discount_amount: number;
+    payment_status: string;
+    status: string;
+    distributor_name: string;
+    items: OrderItem[];
 }
 
 function getPaymentStatusBadgeClass(status: string): string {
@@ -47,7 +41,7 @@ export default function InvoiceArchive({ invoices, stats }: Props) {
     const { toast } = useToast();
     const { flash } = usePage<{ flash?: { success?: string } }>().props;
     const [filter, setFilter] = useState('all');
-    const [expandedInvoices, setExpandedInvoices] = useState<Set<number>>(new Set());
+    const [expandedInvoiceId, setExpandedInvoiceId] = useState<number | null>(null);
 
     // Show success toast if there's a flash message
     useEffect(() => {
@@ -70,15 +64,7 @@ export default function InvoiceArchive({ invoices, stats }: Props) {
     };
 
     const toggleExpanded = (invoiceId: number) => {
-        setExpandedInvoices(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(invoiceId)) {
-                newSet.delete(invoiceId);
-            } else {
-                newSet.add(invoiceId);
-            }
-            return newSet;
-        });
+        setExpandedInvoiceId(prev => prev === invoiceId ? null : invoiceId);
     };
 
     return (
@@ -189,7 +175,7 @@ export default function InvoiceArchive({ invoices, stats }: Props) {
                                     index={index}
                                     onDownload={downloadInvoice}
                                     onView={viewInvoice}
-                                    isExpanded={expandedInvoices.has(invoice.id)}
+                                    isExpanded={expandedInvoiceId === invoice.id}
                                     onToggleExpanded={() => toggleExpanded(invoice.id)}
                                 />
                              ))}
@@ -270,9 +256,6 @@ function InvoiceCard({
                             <Badge className={getPaymentStatusBadgeClass(invoice.payment_status)} variant="outline">
                                 {invoice.payment_status}
                             </Badge>
-                            <Badge className={getStatusBadgeClass(invoice.status)} variant="outline">
-                                {invoice.status}
-                            </Badge>
                             <ChevronDown
                                 className={`h-5 w-5 text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
                             />
@@ -291,17 +274,32 @@ function InvoiceCard({
                                     <Package className="h-3.5 w-3.5" />
                                     Details
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-3">
                                     <div>
                                         <span className="text-xs text-slate-500">Distributor</span>
-                                        <div className="font-medium text-slate-900 text-sm truncate">{invoice.distributor_name}</div>
+                                        <div className="font-medium text-slate-900 text-sm">{invoice.distributor_name}</div>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-slate-500">Items</span>
+                                        <div className="space-y-1 mt-1">
+                                            {invoice.items && invoice.items.length > 0 ? (
+                                                invoice.items.map((item, idx) => (
+                                                    <div key={idx} className="flex justify-between text-sm">
+                                                        <span className="text-slate-700">{item.product_name}</span>
+                                                        <span className="text-slate-900 font-medium">x{item.quantity}</span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-xs text-slate-500">No items</p>
+                                            )}
+                                        </div>
                                     </div>
                                     <div>
                                         <span className="text-xs text-slate-500">Total Amount</span>
                                         <div className="font-bold text-slate-900 text-sm">LKR {invoice.total_amount.toFixed(2)}</div>
                                     </div>
                                     {invoice.discount_amount > 0 && (
-                                        <div className="col-span-2">
+                                        <div>
                                             <span className="text-xs text-emerald-600">Discount</span>
                                             <div className="text-emerald-600 font-medium text-sm">- LKR {invoice.discount_amount.toFixed(2)}</div>
                                         </div>

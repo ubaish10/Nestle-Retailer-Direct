@@ -18,40 +18,46 @@ class InvoiceController extends Controller
         $this->middleware('auth');
     }
 
-    /**
-     * Display invoices list for authenticated user.
-     */
-    public function index()
-    {
-        $invoices = Invoice::with(['order', 'distributor'])
-            ->where('user_id', Auth::id())
-            ->latest()
-            ->get()
-            ->map(function ($invoice) {
-                return [
-                    'id' => $invoice->id,
-                    'invoice_number' => $invoice->invoice_number,
-                    'order_id' => $invoice->order_id,
-                    'invoice_date' => $invoice->invoice_date->format('M d, Y'),
-                    'total_amount' => (float) $invoice->total_amount,
-                    'discount_amount' => (float) $invoice->discount_amount,
-                    'payment_status' => $invoice->payment_status,
-                    'status' => $invoice->status,
-                    'distributor_name' => $invoice->distributor->name ?? 'N/A',
-                ];
-            });
+     /**
+      * Display invoices list for authenticated user.
+      */
+     public function index()
+     {
+         $invoices = Invoice::with(['order.items.product', 'distributor'])
+             ->where('user_id', Auth::id())
+             ->latest()
+             ->get()
+             ->map(function ($invoice) {
+                 return [
+                     'id' => $invoice->id,
+                     'invoice_number' => $invoice->invoice_number,
+                     'order_id' => $invoice->order_id,
+                     'invoice_date' => $invoice->invoice_date->format('M d, Y'),
+                     'total_amount' => (float) $invoice->total_amount,
+                     'discount_amount' => (float) $invoice->discount_amount,
+                     'payment_status' => $invoice->payment_status,
+                     'status' => $invoice->status,
+                     'distributor_name' => $invoice->distributor->name ?? 'N/A',
+                     'items' => $invoice->order->items->map(function ($item) {
+                         return [
+                             'product_name' => $item->product_name,
+                             'quantity' => $item->quantity,
+                         ];
+                     })->toArray(),
+                 ];
+             });
 
-        $stats = [
-            'total_invoices' => (int) Invoice::where('user_id', Auth::id())->count(),
-            'total_spent' => (float) Invoice::where('user_id', Auth::id())->sum('total_amount'),
-            'paid_invoices' => (int) Invoice::where('user_id', Auth::id())->where('payment_status', 'paid')->count(),
-        ];
+         $stats = [
+             'total_invoices' => (int) Invoice::where('user_id', Auth::id())->count(),
+             'total_spent' => (float) Invoice::where('user_id', Auth::id())->sum('total_amount'),
+             'paid_invoices' => (int) Invoice::where('user_id', Auth::id())->where('payment_status', 'paid')->count(),
+         ];
 
-        return Inertia::render('InvoiceArchive', [
-            'invoices' => $invoices,
-            'stats' => $stats,
-        ]);
-    }
+         return Inertia::render('InvoiceArchive', [
+             'invoices' => $invoices,
+             'stats' => $stats,
+         ]);
+     }
 
     /**
      * Download invoice PDF.
