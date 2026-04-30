@@ -17,11 +17,6 @@ import {
 } from '@/components/ui/dialog';
 import { useState } from 'react';
 
-interface Distributor {
-    id: number;
-    name: string;
-}
-
 interface Survey {
     id: number;
     title: string;
@@ -32,7 +27,6 @@ interface Survey {
     is_active: boolean;
     responses_count: number;
     created_at: string;
-    distributor: Distributor | null;
 }
 
 interface Props {
@@ -110,7 +104,7 @@ export default function AdminSurveysIndex({ surveys = [] }: Props) {
                             Demand Sensing Surveys
                         </h1>
                         <p className="text-muted-foreground">
-                            Manage surveys assigned to distributors
+                            Manage surveys
                         </p>
                     </div>
                     <Button asChild>
@@ -170,26 +164,6 @@ export default function AdminSurveysIndex({ surveys = [] }: Props) {
                                     (sum, s) => sum + (s.responses_count || 0),
                                     0,
                                 )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Distributors
-                            </CardTitle>
-                            <Store className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {(() => {
-                                    const ids = surveys
-                                        .map((s) => s.distributor?.id)
-                                        .filter(
-                                            (id): id is number => id != null,
-                                        );
-                                    return new Set(ids).size;
-                                })()}
                             </div>
                         </CardContent>
                     </Card>

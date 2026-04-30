@@ -521,8 +521,7 @@ export default function AdminSurveysEdit({ survey }: Props) {
                                                                                         }
                                                                                     </div>
                                                                                     <div className="text-xs text-slate-500">
-                                                                                        ₱
-                                                                                        {product.price.toLocaleString()}
+                                                                                        LKR {product.price.toLocaleString()}
                                                                                     </div>
                                                                                 </div>
                                                                             </label>

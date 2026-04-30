@@ -181,7 +181,7 @@ export default function RetailerSurveyAnswer({ survey }: Props) {
                                             {product.name}
                                         </div>
                                         <div className="text-xs font-medium text-[#00447C]">
-                                            ₱{product.price.toLocaleString()}
+                                            LKR {product.price.toLocaleString()}
                                         </div>
                                     </div>
                                 </label>

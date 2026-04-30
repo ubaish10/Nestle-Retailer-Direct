@@ -184,14 +184,6 @@ export default function AdminSurveysShow({ survey, responses }: Props) {
                                     <span>
                                         • {responses.length} response(s)
                                     </span>
-                                    {survey.distributor && (
-                                        <>
-                                            <span>
-                                                • Distributor:{' '}
-                                                {survey.distributor.name}
-                                            </span>
-                                        </>
-                                    )}
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
