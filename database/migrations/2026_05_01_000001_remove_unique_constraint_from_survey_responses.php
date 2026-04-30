@@ -11,22 +11,31 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('survey_responses', function (Blueprint $table) {
-            // Attempt to drop unique constraint if it exists, ignore errors
-            try {
-                $table->dropUnique(['survey_id', 'retailer_id']);
-            } catch (\Exception $e) {}
+        // Use raw statements to check and drop indexes safely (MySQL)
+        if (Schema::hasTable('survey_responses')) {
+            // Check for known index names and drop them if present
+            $existing = \Illuminate\Support\Facades\DB::select("SHOW INDEX FROM `survey_responses` WHERE Key_name IN ('survey_responses_survey_id_retailer_id_unique','survey_responses_survey_id_retailer_id_index')");
+            foreach ($existing as $idx) {
+                $key = $idx->Key_name ?? $idx['Key_name'] ?? null;
+                if ($key) {
+                    try {
+                        \Illuminate\Support\Facades\DB::statement("ALTER TABLE `survey_responses` DROP INDEX `" . $key . "`");
+                    } catch (\Exception $e) {
+                        // ignore
+                    }
+                }
+            }
 
-            // Attempt to drop any existing index on these columns to avoid duplicate name errors
-            try {
-                $table->dropIndex(['survey_id', 'retailer_id']);
-            } catch (\Exception $e) {}
-
-            // Add a non-unique index with a safe name
-            try {
-                $table->index(['survey_id', 'retailer_id'], 'idx_survey_retailer');
-            } catch (\Exception $e) {}
-        });
+            // Create a safe non-unique index if it doesn't exist
+            $check = \Illuminate\Support\Facades\DB::select("SHOW INDEX FROM `survey_responses` WHERE Key_name = 'idx_survey_retailer'");
+            if (empty($check)) {
+                try {
+                    \Illuminate\Support\Facades\DB::statement("ALTER TABLE `survey_responses` ADD INDEX `idx_survey_retailer` (`survey_id`,`retailer_id`)");
+                } catch (\Exception $e) {
+                    // ignore
+                }
+            }
+        }
     }
 
     /**

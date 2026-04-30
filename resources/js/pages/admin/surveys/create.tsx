@@ -69,7 +69,7 @@ export default function AdminSurveysCreate() {
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [status, setStatus] = useState('draft');
+    const [status, setStatus] = useState('active');
     const [startDate, setStartDate] = useState('');
     const [expiryDate, setExpiryDate] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -241,21 +241,9 @@ export default function AdminSurveysCreate() {
                                         <label className="mb-1 block text-sm font-medium text-slate-900">
                                             Status
                                         </label>
-                                        <select
-                                            value={status}
-                                            onChange={(e) =>
-                                                setStatus(e.target.value)
-                                            }
-                                            className="w-full rounded-xl border border-slate-300 bg-white p-3 focus:border-[#00447C] focus:ring-2 focus:ring-[#00447C]"
-                                        >
-                                            <option value="draft">Draft</option>
-                                            <option value="active">
-                                                Active
-                                            </option>
-                                            <option value="closed">
-                                                Closed
-                                            </option>
-                                        </select>
+                                        <div className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-700">
+                                            Active
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="mb-1 block text-sm font-medium text-slate-900">

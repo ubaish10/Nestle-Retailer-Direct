@@ -492,12 +492,22 @@ class SurveyController extends Controller
                     'name' => $survey->distributor->name,
                 ] : null,
                 'questions' => $survey->questions->map(function ($q) {
+                    $productIds = null;
+                    if (is_array($q->options) && isset($q->options['product_ids'])) {
+                        $productIds = $q->options['product_ids'];
+                    } elseif (is_string($q->options)) {
+                        $decoded = json_decode($q->options, true);
+                        $productIds = $decoded['product_ids'] ?? null;
+                    }
+
                     return [
                         'id' => $q->id,
                         'question_text' => $q->question_text,
                         'question_type' => $q->question_type,
                         'order' => $q->order,
                         'is_required' => $q->is_required,
+                        'placeholder' => $q->placeholder,
+                        'product_ids' => $productIds ?? [],
                     ];
                 })->values()->all(),
                 'created_at' => $survey->created_at->format('Y-m-d H:i'),
@@ -522,6 +532,16 @@ class SurveyController extends Controller
                 'start_date' => $survey->start_date?->format('Y-m-d'),
                 'expiry_date' => $survey->expiry_date?->format('Y-m-d'),
                 'questions' => $survey->questions->map(function ($q) {
+                    // Extract product_ids from the JSON options field when present
+                    $productIds = null;
+                    if (is_array($q->options) && isset($q->options['product_ids'])) {
+                        $productIds = $q->options['product_ids'];
+                    } elseif (is_string($q->options)) {
+                        // In case options is stored as JSON string
+                        $decoded = json_decode($q->options, true);
+                        $productIds = $decoded['product_ids'] ?? null;
+                    }
+
                     return [
                         'id' => $q->id,
                         'question_text' => $q->question_text,
@@ -529,8 +549,9 @@ class SurveyController extends Controller
                         'placeholder' => $q->placeholder,
                         'is_required' => $q->is_required,
                         'order' => $q->order,
+                        'product_ids' => $productIds ?? [],
                     ];
-                }),
+                })->values()->all(),
             ],
         ]);
     }
@@ -609,6 +630,11 @@ class SurveyController extends Controller
         }
 
         $survey->questions()->whereNotIn('id', $existingQuestionIds)->delete();
+
+        // If this was an AJAX/fetch request, return JSON so the frontend sees a 200 OK with JSON
+        if ($request->expectsJson() || $request->isJson()) {
+            return response()->json(['success' => true, 'message' => 'Survey updated successfully.']);
+        }
 
         return redirect()->route('admin.surveys.index')
             ->with('success', 'Survey updated successfully.');
