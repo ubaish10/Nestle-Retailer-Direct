@@ -19,7 +19,8 @@ return new class extends Migration
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['survey_id', 'retailer_id']);
+            // Allow multiple responses from the same retailer to the same survey
+            // (e.g., if they want to update their feedback)
             $table->index(['survey_id', 'retailer_id']);
         });
     }

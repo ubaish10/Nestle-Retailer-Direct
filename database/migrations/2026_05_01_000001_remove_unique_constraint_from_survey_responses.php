@@ -11,29 +11,46 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Use raw statements to check and drop indexes safely (MySQL)
-        if (Schema::hasTable('survey_responses')) {
-            // Check for known index names and drop them if present
-            $existing = \Illuminate\Support\Facades\DB::select("SHOW INDEX FROM `survey_responses` WHERE Key_name IN ('survey_responses_survey_id_retailer_id_unique','survey_responses_survey_id_retailer_id_index')");
-            foreach ($existing as $idx) {
-                $key = $idx->Key_name ?? $idx['Key_name'] ?? null;
-                if ($key) {
-                    try {
-                        \Illuminate\Support\Facades\DB::statement("ALTER TABLE `survey_responses` DROP INDEX `" . $key . "`");
-                    } catch (\Exception $e) {
-                        // ignore
-                    }
+        if (! Schema::hasTable('survey_responses')) {
+            return;
+        }
+
+        // Get all indexes on the table
+        $indexes = \Illuminate\Support\Facades\DB::select("SHOW INDEX FROM `survey_responses`");
+        
+        foreach ($indexes as $index) {
+            $keyName = $index->Key_name ?? $index['Key_name'] ?? null;
+            
+            // Skip primary key
+            if ($keyName === 'PRIMARY') {
+                continue;
+            }
+            
+            // Check if this is a unique index on survey_id and retailer_id
+            if ($keyName === 'survey_responses_survey_id_retailer_id_unique') {
+                try {
+                    \Illuminate\Support\Facades\DB::statement("ALTER TABLE `survey_responses` DROP INDEX `" . $keyName . "`");
+                } catch (\Exception $e) {
+                    // Index might not exist, ignore
                 }
             }
+        }
 
-            // Create a safe non-unique index if it doesn't exist
-            $check = \Illuminate\Support\Facades\DB::select("SHOW INDEX FROM `survey_responses` WHERE Key_name = 'idx_survey_retailer'");
-            if (empty($check)) {
-                try {
-                    \Illuminate\Support\Facades\DB::statement("ALTER TABLE `survey_responses` ADD INDEX `idx_survey_retailer` (`survey_id`,`retailer_id`)");
-                } catch (\Exception $e) {
-                    // ignore
-                }
+        // Create a non-unique index if it doesn't exist
+        $hasNonUniqueIndex = false;
+        foreach ($indexes as $index) {
+            $keyName = $index->Key_name ?? $index['Key_name'] ?? null;
+            if ($keyName === 'idx_survey_retailer') {
+                $hasNonUniqueIndex = true;
+                break;
+            }
+        }
+
+        if (! $hasNonUniqueIndex) {
+            try {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE `survey_responses` ADD INDEX `idx_survey_retailer` (`survey_id`,`retailer_id`)");
+            } catch (\Exception $e) {
+                // Index might already exist
             }
         }
     }
@@ -43,10 +60,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('survey_responses', function (Blueprint $table) {
-            // Drop the non-unique index and restore the unique constraint
-            $table->dropIndex(['survey_id', 'retailer_id']);
-            $table->unique(['survey_id', 'retailer_id']);
-        });
+        // Nothing to do here - we don't want to restore the unique constraint
     }
 };

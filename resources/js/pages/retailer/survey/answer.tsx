@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Clipboard, Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +35,7 @@ interface Props {
 
 export default function RetailerSurveyAnswer({ survey }: Props) {
     const { toast } = useToast();
+    const page = usePage();
     const [answers, setAnswers] = useState<Record<number, string>>({});
     const [additionalComments, setAdditionalComments] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -64,16 +65,17 @@ export default function RetailerSurveyAnswer({ survey }: Props) {
         }
 
         try {
+            // Get CSRF token from Inertia shared data (always fresh)
+            const csrfToken = (page.props.csrf_token as string) || 
+                ((document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '');
+
             const response = await fetch(`/survey/${survey.id}/submit`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN':
-                        (
-                            document.querySelector(
-                                'meta[name="csrf-token"]',
-                            ) as HTMLMetaElement
-                        )?.content || '',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
                 body: JSON.stringify({
                     answers: Object.entries(answers).map(
@@ -95,9 +97,31 @@ export default function RetailerSurveyAnswer({ survey }: Props) {
                 }),
             });
 
+            // Handle non-JSON responses (e.g., HTML error pages from redirects)
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                // If we get redirected to login page, the response will be HTML
+                if (response.redirected || response.status === 401 || response.status === 403) {
+                    toast({
+                        title: 'Authentication Error',
+                        description: 'Please log in again to submit your feedback.',
+                        variant: 'destructive',
+                    });
+                    // Redirect to home page to refresh the session
+                    router.visit('/');
+                    return;
+                }
+                toast({
+                    title: 'Error',
+                    description: 'Server returned an invalid response. Please try again.',
+                    variant: 'destructive',
+                });
+                return;
+            }
+
             const data = await response.json();
 
-            if (data.success) {
+            if (response.ok && data.success) {
                 toast({
                     title: 'Success!',
                     description:
@@ -114,9 +138,14 @@ export default function RetailerSurveyAnswer({ survey }: Props) {
                 });
             }
         } catch (error) {
+            // More specific error message
+            let errorMessage = 'Failed to submit. Please try again.';
+            if (error instanceof TypeError && error.message.includes('fetch')) {
+                errorMessage = 'Network error. Please check your internet connection.';
+            }
             toast({
                 title: 'Error',
-                description: 'Failed to submit. Please check your connection.',
+                description: errorMessage,
                 variant: 'destructive',
             });
         } finally {
