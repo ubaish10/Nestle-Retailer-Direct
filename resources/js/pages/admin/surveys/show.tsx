@@ -6,8 +6,11 @@ import {
     MessageSquare,
     Pencil,
     Trash2,
+    BarChart3,
+    ChevronDown,
+    ChevronUp,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,10 +25,42 @@ import {
     DialogTitle,
     DialogFooter,
 } from '@/components/ui/dialog';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    LineElement,
+    PointElement,
+    Title,
+    Tooltip,
+    Legend,
+    ArcElement,
+} from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    LineElement,
+    PointElement,
+    Title,
+    Tooltip,
+    Legend,
+    ArcElement
+);
 
 interface SurveyAnswer {
     question: string;
     answer_text: string;
+    answer_value: any;
+    product: {
+        id: number;
+        name: string;
+        price: number;
+        image_url: string | null;
+    } | null;
 }
 
 interface SurveyResponse {
@@ -78,12 +113,210 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+// ProductGraph Component Props
+interface ProductGraphProps {
+    questionId: number;
+    questionText: string;
+    getProductStats: (questionId: number) => {
+        labels: string[];
+        counts: number[];
+        prices: number[];
+    };
+    getChartOptions: (questionText: string) => any;
+}
+
+// ProductGraph Component
+function ProductGraph({ questionId, questionText, getProductStats, getChartOptions }: ProductGraphProps) {
+    const stats = getProductStats(questionId);
+
+    if (!stats.labels.length) {
+        return (
+            <div className="flex items-center justify-center py-8 text-sm text-slate-500">
+                No product data available for this question.
+            </div>
+        );
+    }
+
+    const data = {
+        labels: stats.labels,
+        datasets: [
+            {
+                label: 'Number of Retailers',
+                data: stats.counts,
+                backgroundColor: 'rgba(0, 68, 124, 0.7)',
+                borderColor: 'rgba(0, 68, 124, 1)',
+                borderWidth: 2,
+                borderRadius: 6,
+            },
+        ],
+    };
+
+    const options = getChartOptions(questionText);
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-slate-700">
+                    Product Response Summary
+                </h4>
+                <span className="text-xs text-slate-500">
+                    {stats.labels.length} product(s) • {stats.counts.reduce((a, b) => a + b, 0)} response(s)
+                </span>
+            </div>
+            <div className="h-[300px]">
+                <Bar data={data} options={options} />
+            </div>
+            {/* Product Details Table */}
+            <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="border-b border-slate-200">
+                            <th className="px-3 py-2 text-left font-medium text-slate-600">Product</th>
+                            <th className="px-3 py-2 text-right font-medium text-slate-600">Retailers</th>
+                            <th className="px-3 py-2 text-right font-medium text-slate-600">Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {stats.labels.map((label, index) => {
+                            const count = stats.counts[index];
+                            const total = stats.counts.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0';
+                            return (
+                                <tr key={label} className="border-b border-slate-100 last:border-0">
+                                    <td className="px-3 py-2 text-slate-900">{label}</td>
+                                    <td className="px-3 py-2 text-right text-slate-600">{count}</td>
+                                    <td className="px-3 py-2 text-right text-slate-600">{percentage}%</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
+
 export default function AdminSurveysShow({ survey, responses }: Props) {
     const [deleting, setDeleting] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [expandedGraphs, setExpandedGraphs] = useState<Set<number>>(new Set());
     const page = usePage();
     const flash = page.props?.flash;
     const { toast } = useToast();
+
+    // Toggle graph expansion for a specific question
+    const toggleGraph = (questionId: number) => {
+        setExpandedGraphs((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(questionId)) {
+                newSet.delete(questionId);
+            } else {
+                newSet.add(questionId);
+            }
+            return newSet;
+        });
+    };
+
+    // Process response data to get product statistics for a specific question
+    const getProductStatsForQuestion = useMemo(() => {
+        return (questionId: number) => {
+            const productCounts: Record<string, number> = {};
+            const productPrices: Record<string, number> = {};
+
+            responses.forEach((response) => {
+                response.answers.forEach((answer) => {
+                    // Match answer to question by comparing question text
+                    const question = survey.questions.find(q => q.id === questionId);
+                    if (question && answer.question === question.question_text) {
+                        if (answer.product) {
+                            const productName = answer.product.name;
+                            productCounts[productName] = (productCounts[productName] || 0) + 1;
+                            productPrices[productName] = answer.product.price;
+                        }
+                    }
+                });
+            });
+
+            // Sort by count (descending) and return
+            const sortedProducts = Object.entries(productCounts)
+                .sort((a, b) => b[1] - a[1]);
+
+            return {
+                labels: sortedProducts.map(([name]) => name),
+                counts: sortedProducts.map(([, count]) => count),
+                prices: sortedProducts.map(([name]) => productPrices[name] || 0),
+            };
+        };
+    }, [responses, survey.questions]);
+
+    // Check if a question has product-related answers
+    const questionHasProductAnswers = useMemo(() => {
+        return (questionId: number) => {
+            const question = survey.questions.find(q => q.id === questionId);
+            if (!question) return false;
+
+            return responses.some((response) =>
+                response.answers.some((answer) =>
+                    answer.question === question.question_text && answer.product !== null
+                )
+            );
+        };
+    }, [responses, survey.questions]);
+
+    // Chart options
+    const getChartOptions = (questionText: string) => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top' as const,
+            },
+            title: {
+                display: true,
+                text: `Product Responses: ${questionText}`,
+                font: {
+                    size: 14,
+                    weight: 'bold' as const,
+                },
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context: any) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            label += context.parsed.y;
+                        }
+                        return label;
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1,
+                    callback: function(value: any) {
+                        return Number.isInteger(value) ? value : null;
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Number of Retailers',
+                },
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Products',
+                },
+            },
+        },
+    });
 
     // Show success/error messages
     useEffect(() => {
@@ -204,35 +437,75 @@ export default function AdminSurveysShow({ survey, responses }: Props) {
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {/* Questions */}
+                        {/* Questions with Graph Buttons */}
                         <div>
                             <h3 className="mb-4 text-lg font-semibold text-slate-900">
                                 Questions
                             </h3>
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 {survey.questions
                                     .sort((a, b) => a.order - b.order)
-                                    .map((question, index) => (
-                                        <div
-                                            key={question.id}
-                                            className="flex items-start gap-3 rounded-xl bg-slate-50 p-3"
-                                        >
-                                            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#00447C]/10 text-xs font-medium text-[#00447C]">
-                                                {index + 1}
-                                            </span>
-                                            <div>
-                                                <p className="text-sm text-slate-900">
-                                                    {question.question_text}
-                                                </p>
-                                                <p className="mt-0.5 text-xs text-slate-500">
-                                                    Type:{' '}
-                                                    {question.question_type}{' '}
-                                                    {question.is_required &&
-                                                        '(Required)'}
-                                                </p>
+                                    .map((question, index) => {
+                                        const hasProductAnswers = questionHasProductAnswers(question.id);
+                                        const isExpanded = expandedGraphs.has(question.id);
+
+                                        return (
+                                            <div
+                                                key={question.id}
+                                                className="rounded-xl bg-slate-50 p-3"
+                                            >
+                                                <div className="flex items-start gap-3">
+                                                    <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#00447C]/10 text-xs font-medium text-[#00447C]">
+                                                        {index + 1}
+                                                    </span>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm text-slate-900">
+                                                            {question.question_text}
+                                                        </p>
+                                                        <p className="mt-0.5 text-xs text-slate-500">
+                                                            Type:{' '}
+                                                            {question.question_type}{' '}
+                                                            {question.is_required &&
+                                                                '(Required)'}
+                                                        </p>
+                                                    </div>
+                                                    {hasProductAnswers && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => toggleGraph(question.id)}
+                                                            className="flex items-center gap-1"
+                                                        >
+                                                            <BarChart3 className="h-4 w-4" />
+                                                            {isExpanded ? (
+                                                                <>
+                                                                    <ChevronUp className="h-3 w-3" />
+                                                                    Hide Graph
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <ChevronDown className="h-3 w-3" />
+                                                                    View Graph
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    )}
+                                                </div>
+
+                                                {/* Expandable Graph Section */}
+                                                {isExpanded && hasProductAnswers && (
+                                                    <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+                                                        <ProductGraph
+                                                            questionId={question.id}
+                                                            questionText={question.question_text}
+                                                            getProductStats={getProductStatsForQuestion}
+                                                            getChartOptions={getChartOptions}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                             </div>
                         </div>
 
