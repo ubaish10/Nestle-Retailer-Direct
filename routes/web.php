@@ -4,6 +4,7 @@ use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\Dashboard\AccountsController;
 use App\Http\Controllers\DistributorController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\LoyaltyController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PayPalController;
 use App\Http\Controllers\ProductController;
@@ -173,6 +174,17 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
 // Promo code validation routes (authenticated users)
 Route::middleware(['auth'])->post('/api/promo-code/validate', [PromotionController::class, 'validatePromoCode'])->name('api.promo-code.validate');
 Route::middleware(['auth'])->get('/api/promotions/active', [PromotionController::class, 'activePromotions'])->name('api.promotions.active');
+
+// Loyalty routes (authenticated users)
+Route::middleware(['auth'])->get('/api/loyalty/status', [LoyaltyController::class, 'status'])->name('api.loyalty.status');
+Route::middleware(['auth'])->post('/api/loyalty/calculate-discount', [LoyaltyController::class, 'calculateDiscount'])->name('api.loyalty.calculate-discount');
+Route::get('/api/loyalty/tiers', [LoyaltyController::class, 'tiers'])->name('api.loyalty.tiers');
+
+// Admin loyalty routes
+Route::middleware(['auth', 'verified', 'admin'])->group(function () {
+    Route::get('loyalty', [LoyaltyController::class, 'adminIndex'])->name('admin.loyalty.index');
+    Route::get('api/loyalty/stats', [LoyaltyController::class, 'adminStats'])->name('admin.loyalty.stats');
+});
 
 // Survey API routes
 Route::middleware(['auth'])->get('/api/surveys/active', [SurveyController::class, 'active'])->name('api.surveys.active');

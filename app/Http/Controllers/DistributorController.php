@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\RetailerInventory;
 use App\Models\User;
 use App\Services\InvoiceService;
+use App\Services\LoyaltyService;
 use Illuminate\Http\Request;
 
 class DistributorController extends Controller
@@ -247,6 +248,22 @@ class DistributorController extends Controller
             // Don't fail the approval if invoice generation fails
         }
 
+        // Award loyalty points for this order
+        try {
+            $loyaltyService = new LoyaltyService();
+            $loyaltyService->awardPointsForOrder($order);
+            \Log::info('Loyalty points awarded for order', [
+                'order_id' => $order->id,
+                'user_id' => $order->user_id,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to award loyalty points for order', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+            // Don't fail the approval if loyalty points award fails
+        }
+
         return redirect()->back()->with('success', 'Order approved successfully! Invoice has been generated.');
     }
 
@@ -325,6 +342,22 @@ class DistributorController extends Controller
             // Don't fail the approval if invoice generation fails
         }
 
+        // Award loyalty points for this order
+        try {
+            $loyaltyService = new LoyaltyService();
+            $loyaltyService->awardPointsForOrder($order);
+            \Log::info('Loyalty points awarded for order', [
+                'order_id' => $order->id,
+                'user_id' => $order->user_id,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to award loyalty points for order', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+            // Don't fail the approval if loyalty points award fails
+        }
+
         return redirect()->back()->with('success', 'Order approved successfully! Invoice has been generated.');
     }
 
@@ -401,6 +434,22 @@ class DistributorController extends Controller
                 'error' => $e->getMessage(),
             ]);
             // Don't fail the approval if invoice generation fails
+        }
+
+        // Award loyalty points for this order
+        try {
+            $loyaltyService = new LoyaltyService();
+            $loyaltyService->awardPointsForOrder($order);
+            \Log::info('Loyalty points awarded for order', [
+                'order_id' => $order->id,
+                'user_id' => $order->user_id,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to award loyalty points for order', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+            // Don't fail the approval if loyalty points award fails
         }
 
         return redirect()->back()->with('success', 'Order approved successfully! Invoice has been generated.');
