@@ -93,15 +93,30 @@ export default function AdminSurveysEdit({ survey }: Props) {
         fetchProducts();
     }, []);
 
+    useEffect(() => {
+        if (allProducts.length > 0) {
+            setQuestions((prev) =>
+                prev.map((q) => ({
+                    ...q,
+                    product_ids:
+                        q.question_type === 'product_selection' &&
+                        (!q.product_ids || q.product_ids.length === 0)
+                            ? allProducts.map((p) => p.id)
+                            : q.product_ids,
+                })),
+            );
+        }
+    }, [allProducts]);
+
     const addQuestion = () => {
         const newQuestion: Question = {
             id: Date.now(),
             question_text: '',
-            question_type: 'text',
+            question_type: 'product_selection',
             placeholder: '',
             is_required: true,
             order: questions.length,
-            product_ids: [],
+            product_ids: allProducts.map((p) => p.id),
         };
         setQuestions([...questions, newQuestion]);
     };

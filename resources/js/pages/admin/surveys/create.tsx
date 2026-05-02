@@ -79,7 +79,6 @@ export default function AdminSurveysCreate() {
                     const data = await response.json();
                     setAllProducts(data.products || []);
                 } else {
-                    // Fallback: try to get products from the window object if available
                     console.warn('Could not fetch products from API');
                 }
             } catch (error) {
@@ -91,6 +90,21 @@ export default function AdminSurveysCreate() {
         fetchProducts();
     }, []);
 
+    useEffect(() => {
+        if (allProducts.length > 0) {
+            setQuestions((prev) =>
+                prev.map((q) => ({
+                    ...q,
+                    product_ids:
+                        q.question_type === 'product_selection' &&
+                        (!q.product_ids || q.product_ids.length === 0)
+                            ? allProducts.map((p) => p.id)
+                            : q.product_ids,
+                })),
+            );
+        }
+    }, [allProducts]);
+
     const addQuestion = () => {
         const newQuestion: Question = {
             question_text: '',
@@ -98,6 +112,7 @@ export default function AdminSurveysCreate() {
             placeholder: '',
             is_required: true,
             order: questions.length,
+            product_ids: allProducts.map((p) => p.id),
         };
         setQuestions([...questions, newQuestion]);
     };
