@@ -10,11 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 interface Question {
     id: number;
     question_text: string;
-    question_type:
-        | 'text'
-        | 'textarea'
-        | 'product_suggestion'
-        | 'product_selection';
+    question_type: 'product_selection';
     placeholder: string | null;
     is_required: boolean;
     order: number;
@@ -364,17 +360,6 @@ export default function AdminSurveysEdit({ survey }: Props) {
                                                             }
                                                             className="w-full rounded-lg border border-slate-300 bg-white p-3 focus:border-[#00447C] focus:ring-2 focus:ring-[#00447C]"
                                                         >
-                                                            <option value="text">
-                                                                Short Text
-                                                            </option>
-                                                            <option value="textarea">
-                                                                Long Text
-                                                            </option>
-                                                            <option value="product_suggestion">
-                                                                Product
-                                                                Suggestion (Open
-                                                                Text)
-                                                            </option>
                                                             <option value="product_selection">
                                                                 Product
                                                                 Selection (Radio

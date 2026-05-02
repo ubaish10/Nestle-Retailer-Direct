@@ -9,11 +9,7 @@ import type { BreadcrumbItem } from '@/types';
 interface Question {
     id?: number;
     question_text: string;
-    question_type:
-        | 'text'
-        | 'textarea'
-        | 'product_suggestion'
-        | 'product_selection';
+    question_type: 'product_selection';
     placeholder: string;
     is_required: boolean;
     order: number;
@@ -57,7 +53,7 @@ export default function AdminSurveysCreate() {
     const [questions, setQuestions] = useState<Question[]>([
         {
             question_text: '',
-            question_type: 'text',
+            question_type: 'product_selection',
             placeholder: '',
             is_required: true,
             order: 0,
@@ -98,7 +94,7 @@ export default function AdminSurveysCreate() {
     const addQuestion = () => {
         const newQuestion: Question = {
             question_text: '',
-            question_type: 'text',
+            question_type: 'product_selection',
             placeholder: '',
             is_required: true,
             order: questions.length,
@@ -180,7 +176,10 @@ export default function AdminSurveysCreate() {
             } else {
                 const error = await response.json();
                 console.error('Validation errors:', error);
-                alert('Please fix the errors in the form');
+                const messages = error.errors
+                    ? Object.values(error.errors).flat().join('\n')
+                    : error.message || 'Please fix the errors in the form';
+                alert(messages);
             }
         } catch (error) {
             console.error('Error:', error);
@@ -337,17 +336,6 @@ export default function AdminSurveysCreate() {
                                                             }
                                                             className="w-full rounded-lg border border-slate-300 bg-white p-3 focus:border-[#00447C] focus:ring-2 focus:ring-[#00447C]"
                                                         >
-                                                            <option value="text">
-                                                                Short Text
-                                                            </option>
-                                                            <option value="textarea">
-                                                                Long Text
-                                                            </option>
-                                                            <option value="product_suggestion">
-                                                                Product
-                                                                Suggestion (Open
-                                                                Text)
-                                                            </option>
                                                             <option value="product_selection">
                                                                 Product
                                                                 Selection (Radio
