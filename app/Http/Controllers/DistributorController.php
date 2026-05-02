@@ -41,7 +41,7 @@ class DistributorController extends Controller
      */
     public function orders(Request $request)
     {
-        $query = Order::with(['user', 'items']);
+        $query = Order::with(['user', 'items', 'invoice']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -54,6 +54,8 @@ class DistributorController extends Controller
                 'total_amount' => (float) $order->total_amount,
                 'created_at' => $order->created_at->diffForHumans(),
                 'created_date' => $order->created_at->format('M d, Y'),
+                'has_invoice' => $order->invoice !== null,
+                'invoice_number' => $order->invoice?->invoice_number,
                 'user' => [
                     'id' => $order->user->id,
                     'name' => $order->user->name,
@@ -90,7 +92,7 @@ class DistributorController extends Controller
     {
         $distributorId = auth()->id();
 
-        $query = Order::with(['user', 'items'])
+        $query = Order::with(['user', 'items', 'invoice'])
             ->where('distributor_id', $distributorId);
 
         if ($request->filled('status')) {
@@ -104,6 +106,8 @@ class DistributorController extends Controller
                 'total_amount' => (float) $order->total_amount,
                 'created_at' => $order->created_at->diffForHumans(),
                 'created_date' => $order->created_at->format('M d, Y'),
+                'has_invoice' => $order->invoice !== null,
+                'invoice_number' => $order->invoice?->invoice_number,
                 'user' => [
                     'id' => $order->user->id,
                     'name' => $order->user->name,
@@ -139,7 +143,7 @@ class DistributorController extends Controller
     {
         $distributorId = auth()->id();
 
-        $query = Order::with(['user.shopProfile', 'items'])
+        $query = Order::with(['user.shopProfile', 'items', 'invoice'])
             ->where('distributor_id', $distributorId);
 
         if ($request->filled('status')) {
@@ -153,6 +157,8 @@ class DistributorController extends Controller
                 'total_amount' => (float) $order->total_amount,
                 'created_at' => $order->created_at->diffForHumans(),
                 'created_date' => $order->created_at->format('M d, Y'),
+                'has_invoice' => $order->invoice !== null,
+                'invoice_number' => $order->invoice?->invoice_number,
                 'user' => [
                     'id' => $order->user->id,
                     'name' => $order->user->name,
@@ -235,17 +241,24 @@ class DistributorController extends Controller
         }
 
         // Generate invoice automatically after order approval (digital invoice archive)
-        try {
-            app(InvoiceService::class)->generateInvoice($order);
-            \Log::info('Invoice generated automatically for order', [
+        if (! $order->invoice) {
+            try {
+                $invoice = app(InvoiceService::class)->generateInvoice($order);
+                \Log::info('Invoice generated automatically for order', [
+                    'order_id' => $order->id,
+                    'invoice_number' => $invoice->invoice_number,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to generate invoice for order', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+                // Don't fail the approval if invoice generation fails
+            }
+        } else {
+            \Log::info('Invoice already exists for order, skipping generation', [
                 'order_id' => $order->id,
             ]);
-        } catch (\Exception $e) {
-            \Log::error('Failed to generate invoice for order', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
-            // Don't fail the approval if invoice generation fails
         }
 
         // Award loyalty points for this order
@@ -329,17 +342,24 @@ class DistributorController extends Controller
         }
 
         // Generate invoice automatically after order approval (digital invoice archive)
-        try {
-            app(InvoiceService::class)->generateInvoice($order);
-            \Log::info('Invoice generated automatically for order', [
+        if (! $order->invoice) {
+            try {
+                $invoice = app(InvoiceService::class)->generateInvoice($order);
+                \Log::info('Invoice generated automatically for order', [
+                    'order_id' => $order->id,
+                    'invoice_number' => $invoice->invoice_number,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to generate invoice for order', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+                // Don't fail the approval if invoice generation fails
+            }
+        } else {
+            \Log::info('Invoice already exists for order, skipping generation', [
                 'order_id' => $order->id,
             ]);
-        } catch (\Exception $e) {
-            \Log::error('Failed to generate invoice for order', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
-            // Don't fail the approval if invoice generation fails
         }
 
         // Award loyalty points for this order
@@ -423,17 +443,24 @@ class DistributorController extends Controller
         }
 
         // Generate invoice automatically after order approval (digital invoice archive)
-        try {
-            app(InvoiceService::class)->generateInvoice($order);
-            \Log::info('Invoice generated automatically for order', [
+        if (! $order->invoice) {
+            try {
+                $invoice = app(InvoiceService::class)->generateInvoice($order);
+                \Log::info('Invoice generated automatically for order', [
+                    'order_id' => $order->id,
+                    'invoice_number' => $invoice->invoice_number,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to generate invoice for order', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+                // Don't fail the approval if invoice generation fails
+            }
+        } else {
+            \Log::info('Invoice already exists for order, skipping generation', [
                 'order_id' => $order->id,
             ]);
-        } catch (\Exception $e) {
-            \Log::error('Failed to generate invoice for order', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
-            // Don't fail the approval if invoice generation fails
         }
 
         // Award loyalty points for this order
@@ -468,6 +495,45 @@ class DistributorController extends Controller
         $order->update(['status' => 'rejected']);
 
         return redirect()->back()->with('success', 'Order rejected.');
+    }
+
+    /**
+     * Generate invoice for an approved retailer order.
+     */
+    public function generateInvoice(Order $order)
+    {
+        // Verify the order belongs to this distributor
+        if ($order->distributor_id !== auth()->id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Only allow invoice generation for approved orders
+        if ($order->status !== 'approved') {
+            return redirect()->back()->with('error', 'Invoice can only be generated for approved orders.');
+        }
+
+        // Check if invoice already exists
+        if ($order->invoice) {
+            return redirect()->back()->with('error', 'Invoice already exists for this order.');
+        }
+
+        try {
+            $invoice = app(InvoiceService::class)->generateInvoice($order);
+            \Log::info('Invoice generated manually by distributor', [
+                'order_id' => $order->id,
+                'invoice_number' => $invoice->invoice_number,
+                'distributor_id' => auth()->id(),
+            ]);
+
+            return redirect()->back()->with('success', "Invoice #{$invoice->invoice_number} generated successfully.");
+        } catch (\Exception $e) {
+            \Log::error('Failed to generate invoice for order', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->back()->with('error', 'Failed to generate invoice. Please try again.');
+        }
     }
 
     /**

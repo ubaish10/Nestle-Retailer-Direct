@@ -315,18 +315,24 @@ class OrderController extends Controller
         }
 
         // Generate invoice automatically after order approval (digital invoice archive)
-        try {
-            $invoice = app(InvoiceService::class)->generateInvoice($order);
-            \Log::info('Invoice generated automatically for order', [
+        if (! $order->invoice) {
+            try {
+                $invoice = app(InvoiceService::class)->generateInvoice($order);
+                \Log::info('Invoice generated automatically for order', [
+                    'order_id' => $order->id,
+                    'invoice_number' => $invoice->invoice_number,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to generate invoice for order', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+                // Don't fail the approval if invoice generation fails
+            }
+        } else {
+            \Log::info('Invoice already exists for order, skipping generation', [
                 'order_id' => $order->id,
-                'invoice_number' => $invoice->invoice_number,
             ]);
-        } catch (\Exception $e) {
-            \Log::error('Failed to generate invoice for order', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
-            // Don't fail the approval if invoice generation fails
         }
 
         return redirect()->back()->with('success', 'Order approved successfully! Invoice has been generated.');
