@@ -73,6 +73,7 @@ Route::middleware(['auth', 'verified', 'distributor'])->group(function () {
     Route::get('/distributor/schedule', [DistributorController::class, 'schedule'])->name('distributor.schedule');
     Route::get('/distributor/retailers', [DistributorController::class, 'retailers'])->name('distributor.retailers');
     Route::get('/distributor/dashboard', [DistributorController::class, 'dashboard'])->name('distributor.dashboard');
+    Route::get('/distributor/sales-analytics', [DistributorController::class, 'salesAnalytics'])->name('distributor.sales-analytics');
     Route::get('/distributor/notifications', [DistributorController::class, 'notifications'])->name('distributor.notifications');
     Route::get('/distributor/warehouse-inventory', [DistributorController::class, 'warehouseInventory'])->name('distributor.warehouse-inventory');
     Route::post('/distributor/warehouse-inventory/{product}/restock', [DistributorController::class, 'restock'])->name('distributor.warehouse-inventory.restock');

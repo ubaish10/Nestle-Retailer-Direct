@@ -7,7 +7,6 @@ import {
     Truck,
     BarChart3,
     MapPin,
-    PackageSearch,
     Users,
     Bell,
     FileText,
@@ -68,11 +67,11 @@ const distributorSections = [
         isComingSoon: true,
     },
     {
-        area: 'Tracking Dashboard',
-        icon: PackageSearch,
-        href: '/distributor/dashboard',
-        description: 'Full tracking view',
-        isComingSoon: true,
+        area: 'Sales Analytics',
+        icon: BarChart3,
+        href: '/distributor/sales-analytics',
+        description: 'View sales trends & insights',
+        isComingSoon: false,
     },
     {
         area: 'Notifications',
@@ -82,16 +81,6 @@ const distributorSections = [
         isComingSoon: true,
     },
 ];
-
-interface Props {
-    name: string;
-    companyName: string;
-    stats: {
-        pending_orders: number;
-        total_retailers: number;
-        in_transit: number;
-    };
-}
 
 export default function DistributorHome({ name, companyName, stats }: Props) {
     return (

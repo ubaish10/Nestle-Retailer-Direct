@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\DistributorInventory;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\RetailerInventory;
 use App\Models\User;
 use App\Services\InvoiceService;
 use App\Services\LoyaltyService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DistributorController extends Controller
 {
@@ -33,6 +35,53 @@ class DistributorController extends Controller
             'name' => $user->name,
             'companyName' => $distributorProfile?->company_name ?? 'Distributor',
             'stats' => $stats,
+        ]);
+    }
+
+    /**
+     * Display sales analytics page.
+     */
+    public function salesAnalytics()
+    {
+        $distributorId = auth()->id();
+        $deliveredStatuses = ['delivered', 'completed', 'approved', 'in_transit'];
+
+        $topProducts = OrderItem::selectRaw('product_name, SUM(quantity) as total_quantity, SUM(subtotal) as total_revenue')
+            ->whereHas('order', function ($q) use ($distributorId, $deliveredStatuses) {
+                $q->where('distributor_id', $distributorId)
+                    ->whereIn('status', $deliveredStatuses);
+            })
+            ->groupBy('product_name')
+            ->orderByDesc('total_quantity')
+            ->limit(10)
+            ->get()
+            ->toArray();
+
+        $monthlySales = Order::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as order_count, SUM(total_amount) as revenue")
+            ->where('distributor_id', $distributorId)
+            ->whereIn('status', $deliveredStatuses)
+            ->groupBy('month')
+            ->orderBy('month')
+            ->limit(12)
+            ->get()
+            ->toArray();
+
+        $totalRevenue = Order::where('distributor_id', $distributorId)
+            ->whereIn('status', $deliveredStatuses)
+            ->sum('total_amount');
+
+        $totalProductsSold = OrderItem::whereHas('order', function ($q) use ($distributorId, $deliveredStatuses) {
+            $q->where('distributor_id', $distributorId)
+                ->whereIn('status', $deliveredStatuses);
+        })->sum('quantity');
+
+        return inertia('distributor/sales-analytics', [
+            'salesAnalytics' => [
+                'topProducts' => $topProducts,
+                'monthlySales' => $monthlySales,
+                'totalRevenue' => (float) $totalRevenue,
+                'totalProductsSold' => (int) $totalProductsSold,
+            ],
         ]);
     }
 
