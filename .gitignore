@@ -2,6 +2,8 @@
 /bootstrap/ssr
 /node_modules
 /public/build
+!/public/build
+!/public/build/**
 /public/hot
 /public/storage
 /storage/*.key
@@ -31,3 +33,4 @@ yarn-error.log
 
 # Allow SQLite for Vercel deployment
 !database/database.sqlite
+.vercel
