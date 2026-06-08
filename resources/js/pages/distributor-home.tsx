@@ -4,7 +4,7 @@ import {
     AlertCircle,
     ClipboardList,
     BarChart3,
-    FileText,
+    MessageSquare,
     Receipt,
 } from 'lucide-react';
 
@@ -32,10 +32,10 @@ const distributorSections = [
         description: 'Manage complaints',
     },
     {
-        area: 'Survey Responses',
-        icon: FileText,
-        href: '/distributor/surveys',
-        description: 'View retailer responses',
+        area: 'Feedback',
+        icon: MessageSquare,
+        href: '/distributor/feedback',
+        description: 'Submit feedback',
     },
     {
         area: 'Invoice',

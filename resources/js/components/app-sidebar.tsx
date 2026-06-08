@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { UserCog, Tag, ClipboardList } from 'lucide-react';
+import { UserCog, Tag, MessageSquare } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -25,9 +25,9 @@ const mainNavItems: NavItem[] = [
         icon: Tag,
     },
     {
-        title: 'Surveys',
-        href: '/surveys',
-        icon: ClipboardList,
+        title: 'Feedback',
+        href: '/admin/feedback',
+        icon: MessageSquare,
     },
 ];
 
