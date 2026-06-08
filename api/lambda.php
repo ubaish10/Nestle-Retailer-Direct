@@ -20,17 +20,15 @@ foreach (['cache', 'sessions', 'views'] as $directory) {
 $runtimeEnvironment = [
     'VIEW_COMPILED_PATH' => $runtimePath.'/views',
     'LOG_CHANNEL' => 'stderr',
-    'SESSION_DRIVER' => getenv('SESSION_DRIVER') ?: 'cookie',
-    'CACHE_STORE' => getenv('CACHE_STORE') ?: 'array',
-    'QUEUE_CONNECTION' => getenv('QUEUE_CONNECTION') ?: 'sync',
+    'SESSION_DRIVER' => 'cookie',
+    'CACHE_STORE' => 'array',
+    'QUEUE_CONNECTION' => 'sync',
 ];
 
 foreach ($runtimeEnvironment as $key => $value) {
-    if (getenv($key) === false || getenv($key) === '') {
-        putenv($key.'='.$value);
-        $_ENV[$key] = $value;
-        $_SERVER[$key] = $value;
-    }
+    putenv($key.'='.$value);
+    $_ENV[$key] = $value;
+    $_SERVER[$key] = $value;
 }
 
 define('LARAVEL_START', microtime(true));
