@@ -15,6 +15,7 @@ use App\Http\Controllers\RetailerInventoryController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\UserApprovalsController;
 use Illuminate\Http\Request;
@@ -82,6 +83,9 @@ Route::middleware(['auth', 'verified', 'distributor'])->group(function () {
     Route::get('/distributor/complaints', [ComplaintController::class, 'distributorIndex'])->name('distributor.complaints.index');
     Route::get('/distributor/complaints/{complaint}', [ComplaintController::class, 'distributorShow'])->name('distributor.complaints.show');
 
+    // Distributor feedback route
+    Route::get('/distributor/feedback', [FeedbackController::class, 'distributorIndex'])->name('distributor.feedback');
+
 // Distributor survey routes (read-only)
 Route::middleware(['auth', 'verified', 'distributor'])->group(function () {
     Route::get('/distributor/surveys', [SurveyController::class, 'index'])->name('distributor.surveys.index');
@@ -105,7 +109,13 @@ Route::middleware(['auth', 'verified', 'retailer'])->group(function () {
     Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
     Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
     Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints.index');
+
+    // Retailer feedback routes
+    Route::get('/retailer/feedback', [FeedbackController::class, 'index'])->name('retailer.feedback.index');
 });
+
+// Feedback API route (accessible by all authenticated users)
+Route::middleware(['auth', 'verified'])->post('/api/feedback', [FeedbackController::class, 'store'])->name('api.feedback.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Invoice routes (digital invoice archive)
@@ -166,6 +176,11 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::put('promotions/{promotion}', [PromotionController::class, 'update'])->name('admin.promotions.update');
     Route::delete('promotions/{promotion}', [PromotionController::class, 'destroy'])->name('admin.promotions.destroy');
     Route::get('promotions/generate-code', [PromotionController::class, 'generatePromoCode'])->name('admin.promotions.generate-code');
+
+    // Admin feedback routes
+    Route::get('/admin/feedback', [FeedbackController::class, 'adminIndex'])->name('admin.feedback.index');
+    Route::get('/admin/feedback/{feedback}', [FeedbackController::class, 'adminShow'])->name('admin.feedback.show');
+    Route::post('/admin/feedback/{feedback}/reply', [FeedbackController::class, 'adminReply'])->name('admin.feedback.reply');
 
     // Survey Management routes (admin only - full CRUD)
     Route::get('surveys', [SurveyController::class, 'adminIndex'])->name('admin.surveys.index');

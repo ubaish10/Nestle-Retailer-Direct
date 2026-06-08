@@ -34,3 +34,5 @@ yarn-error.log
 # Allow SQLite for Vercel deployment
 !database/database.sqlite
 .vercel
+
+.vercel
