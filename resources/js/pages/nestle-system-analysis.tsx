@@ -112,40 +112,46 @@ export default function NestleSystemAnalysis({
     return (
         <GuestLayout canRegister={canRegister}>
             <Head title="Nestlé System Analysis" />
-            <div className="flex min-h-screen w-full flex-col items-center justify-center overflow-x-hidden bg-gradient-to-br from-blue-50 via-white to-blue-100 dark:from-blue-950 dark:via-slate-900 dark:to-blue-900">
-                {/* Cards Container */}
-                <div className="mx-auto flex w-full max-w-4xl flex-col justify-center gap-4 px-4 pb-28 md:gap-6 md:pb-32">
-                    {/* Recommendation - compact line */}
+            <div className="flex min-h-screen w-full flex-col items-center overflow-x-hidden bg-gradient-to-br from-blue-50 via-white to-blue-100 dark:from-blue-950 dark:via-slate-900 dark:to-blue-900">
+                    {/* Recommendation - compact line at top */}
                     {!recommendationLoading && recommendation && (
-                        <a
-                            href={`/quick-reorder?recommend=${recommendation.id}&discount=${recommendation.discount_percent}`}
-                            className="group flex items-center gap-3 rounded-xl border border-blue-200/60 bg-blue-50/80 px-4 py-3 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-blue-100/80 hover:shadow-md dark:border-blue-800/40 dark:bg-blue-950/30 dark:hover:bg-blue-900/40"
-                        >
-                            <Package className="h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
-                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                Reorder{' '}
-                                <span className="font-semibold text-slate-900 dark:text-white">
-                                    {recommendation.name}
-                                </span>
-                            </span>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-200/60 px-2 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-blue-800/40 dark:text-blue-300">
-                                <Clock className="h-3 w-3" />
-                                {recommendation.order_count}x
-                            </span>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-200/60 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-800/40 dark:text-emerald-300">
-                                <Tag className="h-3 w-3" />
-                                {recommendation.discount_percent}% OFF
-                            </span>
-                            <svg
-                                className="ml-auto h-4 w-4 flex-shrink-0 text-blue-400 transition-transform group-hover:translate-x-0.5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                        </a>
+                        <div className="w-full px-4 pt-1 mt-2">
+                            <div className="mx-auto max-w-screen-2xl">
+                                <a
+                                    href={`/quick-reorder?recommend=${recommendation.id}&discount=${recommendation.discount_percent}`}
+                                    className="group flex items-center gap-3 rounded-xl border border-blue-200/60 bg-blue-50/80 px-4 py-3 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-blue-100/80 hover:shadow-md dark:border-blue-800/40 dark:bg-blue-950/30 dark:hover:bg-blue-900/40"
+                                >
+                                    <Package className="h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                        Reorder{' '}
+                                        <span className="font-semibold text-slate-900 dark:text-white">
+                                            {recommendation.name}
+                                        </span>
+                                    </span>
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-200/60 px-2 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-blue-800/40 dark:text-blue-300">
+                                        <Clock className="h-3 w-3" />
+                                        {recommendation.order_count}x
+                                    </span>
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-200/60 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-800/40 dark:text-emerald-300">
+                                        <Tag className="h-3 w-3" />
+                                        {recommendation.discount_percent}% OFF
+                                    </span>
+                                    <svg
+                                        className="ml-auto h-4 w-4 flex-shrink-0 text-blue-400 transition-transform group-hover:translate-x-0.5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
                     )}
+
+                    <div className="flex w-full flex-1 flex-col items-center justify-center -mt-6">
+                {/* Cards Container */}
+                <div className="mx-auto flex w-full max-w-screen-2xl flex-col justify-center gap-4 px-4 pb-28 md:gap-6 md:pb-32">
 
                     {/* Mobile Layout - 2 rows x 2 cols */}
                     <div className="flex flex-col gap-4 md:hidden">
@@ -364,24 +370,85 @@ export default function NestleSystemAnalysis({
                         </div>
                     </div>
 
-                    {/* Desktop Layout - 2 rows x 3 cols */}
-                    <div className="hidden flex-col gap-10 md:flex">
-                        {/* Row 1 - One-Tap Reorder + Complaints + Promotions */}
-                        <div className="grid gap-10 md:grid-cols-3">
-                            {/* One-Tap Reorder Card */}
-                            <a
-                                href="/quick-reorder"
+                    {/* Desktop Layout - single row of all cards */}
+                    <div className="hidden md:flex md:flex-row md:justify-center md:gap-6">
+                        {/* One-Tap Reorder Card */}
+                        <a
+                            href="/quick-reorder"
+                            className="group flex h-56 w-72 cursor-pointer flex-col items-center justify-center rounded-3xl border border-white/50 bg-white/90 p-8 text-center shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:bg-white/10"
+                        >
+                            <div className="transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-110">
+                                <ShoppingCart className="mb-4 h-14 w-14 text-primary" />
+                            </div>
+                            <p className="text-xl font-medium transition-colors duration-300 group-hover:text-primary/80">
+                                One-Tap Reorder
+                            </p>
+                            <div className="mt-4 translate-y-4 transform opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                                <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    Click to view
+                                    <svg
+                                        className="h-4 w-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M9 5l7 7-7 7"
+                                        />
+                                    </svg>
+                                </span>
+                            </div>
+                        </a>
+
+                        {/* Complaints Card */}
+                        <a
+                            href="/complaints"
+                            className="group flex h-56 w-72 cursor-pointer flex-col items-center justify-center rounded-3xl border border-white/50 bg-white/90 p-8 text-center shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:bg-white/10"
+                        >
+                            <div className="transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-110">
+                                <AlertCircle className="mb-4 h-14 w-14 text-primary" />
+                            </div>
+                            <p className="text-xl font-medium transition-colors duration-300 group-hover:text-primary/80">
+                                Complaints
+                            </p>
+                            <div className="mt-4 translate-y-4 transform opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                                <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    Click to view
+                                    <svg
+                                        className="h-4 w-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M9 5l7 7-7 7"
+                                        />
+                                    </svg>
+                                </span>
+                            </div>
+                        </a>
+
+                        {/* Promotions Card with Dropdown */}
+                        <div className="relative">
+                            <Link
+                                href="/retailer/promotions"
                                 className="group flex h-56 w-72 cursor-pointer flex-col items-center justify-center rounded-3xl border border-white/50 bg-white/90 p-8 text-center shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:bg-white/10"
                             >
                                 <div className="transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-110">
-                                    <ShoppingCart className="mb-4 h-14 w-14 text-primary" />
+                                    <Tag className="mb-4 h-14 w-14 text-primary" />
                                 </div>
                                 <p className="text-xl font-medium transition-colors duration-300 group-hover:text-primary/80">
-                                    One-Tap Reorder
+                                    Promotions
                                 </p>
                                 <div className="mt-4 translate-y-4 transform opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                                     <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        Click to view
+                                        View offers
                                         <svg
                                             className="h-4 w-4"
                                             fill="none"
@@ -397,262 +464,189 @@ export default function NestleSystemAnalysis({
                                         </svg>
                                     </span>
                                 </div>
-                            </a>
+                            </Link>
 
-                            {/* Complaints Card */}
-                            <a
-                                href="/complaints"
-                                className="group flex h-56 w-72 cursor-pointer flex-col items-center justify-center rounded-3xl border border-white/50 bg-white/90 p-8 text-center shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:bg-white/10"
-                            >
-                                <div className="transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-110">
-                                    <AlertCircle className="mb-4 h-14 w-14 text-primary" />
-                                </div>
-                                <p className="text-xl font-medium transition-colors duration-300 group-hover:text-primary/80">
-                                    Complaints
-                                </p>
-                                <div className="mt-4 translate-y-4 transform opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                                    <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        Click to view
-                                        <svg
-                                            className="h-4 w-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
+                            {/* Desktop Promotions Dropdown */}
+                            {showPromotions && (
+                                <div className="absolute top-full left-1/2 z-50 mt-4 max-h-96 w-[500px] -translate-x-1/2 overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl">
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <h3 className="flex items-center gap-2 text-lg font-bold">
+                                            <Tag className="h-5 w-5" />
+                                            Active Promotions
+                                        </h3>
+                                        <button
+                                            onClick={() =>
+                                                setShowPromotions(false)
+                                            }
+                                            className="rounded-lg p-2 hover:bg-gray-100"
                                         >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M9 5l7 7-7 7"
-                                            />
-                                        </svg>
-                                    </span>
-                                </div>
-                            </a>
-
-                            {/* Promotions Card with Dropdown */}
-                            <div className="relative">
-                                <Link
-                                    href="/retailer/promotions"
-                                    className="group flex h-56 w-72 cursor-pointer flex-col items-center justify-center rounded-3xl border border-white/50 bg-white/90 p-8 text-center shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:bg-white/10"
-                                >
-                                    <div className="transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-110">
-                                        <Tag className="mb-4 h-14 w-14 text-primary" />
+                                            <X className="h-5 w-5" />
+                                        </button>
                                     </div>
-                                    <p className="text-xl font-medium transition-colors duration-300 group-hover:text-primary/80">
-                                        Promotions
-                                    </p>
-                                    <div className="mt-4 translate-y-4 transform opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            View offers
-                                            <svg
-                                                className="h-4 w-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M9 5l7 7-7 7"
-                                                />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </Link>
+                                    {loading ? (
+                                        <p className="py-8 text-center text-sm text-muted-foreground">
+                                            Loading promotions...
+                                        </p>
+                                    ) : promotions.length === 0 ? (
+                                        <p className="py-8 text-center text-sm text-muted-foreground">
+                                            No active promotions
+                                        </p>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {promotions.map((promo) => (
+                                                <div
+                                                    key={promo.id}
+                                                    className="rounded-xl border p-4 transition-colors hover:bg-gray-50"
+                                                >
+                                                    <div className="mb-2 flex items-start justify-between">
+                                                        <div className="flex-1">
+                                                            <div className="mb-1 flex items-center gap-2">
+                                                                <p className="font-semibold">
+                                                                    {
+                                                                        promo.title
+                                                                    }
+                                                                </p>
+                                                                <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-800">
+                                                                    {promo.discount_type ===
+                                                                    'percentage' ? (
+                                                                        <span className="flex items-center gap-1">
+                                                                            <Percent className="h-3 w-3" />
+                                                                            {
+                                                                                promo.discount_value
+                                                                            }
+                                                                            %
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="flex items-center gap-1">
+                                                                            <DollarSign className="h-3 w-3" />
 
-                                {/* Desktop Promotions Dropdown */}
-                                {showPromotions && (
-                                    <div className="absolute top-full left-1/2 z-50 mt-4 max-h-96 w-[500px] -translate-x-1/2 overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl">
-                                        <div className="mb-4 flex items-center justify-between">
-                                            <h3 className="flex items-center gap-2 text-lg font-bold">
-                                                <Tag className="h-5 w-5" />
-                                                Active Promotions
-                                            </h3>
+                                                                            $
+                                                                            {promo.discount_value.toFixed(
+                                                                                2,
+                                                                            )}
+                                                                        </span>
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                            {promo.description && (
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    {
+                                                                        promo.description
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                            <div className="mt-2 flex items-center gap-1">
+                                                                <Calendar className="h-3 w-3 text-muted-foreground" />
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    {Math.floor(
+                                                                        promo.days_remaining,
+                                                                    )}{' '}
+                                                                    days
+                                                                    remaining
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-3 flex items-center gap-2 border-t pt-3">
+                                                        <code className="flex-1 rounded-lg bg-gray-100 px-3 py-2 text-center font-mono text-sm">
+                                                            {
+                                                                promo.promo_code
+                                                            }
+                                                        </code>
+                                                        <button
+                                                            onClick={() =>
+                                                                handleCopyCode(
+                                                                    promo.promo_code,
+                                                                )
+                                                            }
+                                                            className="rounded-lg p-2 hover:bg-gray-100"
+                                                            title="Copy code"
+                                                        >
+                                                            <Copy className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
                                             <button
                                                 onClick={() =>
                                                     setShowPromotions(false)
                                                 }
-                                                className="rounded-lg p-2 hover:bg-gray-100"
+                                                className="w-full py-2 text-xs text-primary hover:underline"
                                             >
-                                                <X className="h-5 w-5" />
+                                                Click any code to copy •
+                                                Close to dismiss
                                             </button>
                                         </div>
-                                        {loading ? (
-                                            <p className="py-8 text-center text-sm text-muted-foreground">
-                                                Loading promotions...
-                                            </p>
-                                        ) : promotions.length === 0 ? (
-                                            <p className="py-8 text-center text-sm text-muted-foreground">
-                                                No active promotions
-                                            </p>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                {promotions.map((promo) => (
-                                                    <div
-                                                        key={promo.id}
-                                                        className="rounded-xl border p-4 transition-colors hover:bg-gray-50"
-                                                    >
-                                                        <div className="mb-2 flex items-start justify-between">
-                                                            <div className="flex-1">
-                                                                <div className="mb-1 flex items-center gap-2">
-                                                                    <p className="font-semibold">
-                                                                        {
-                                                                            promo.title
-                                                                        }
-                                                                    </p>
-                                                                    <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-800">
-                                                                        {promo.discount_type ===
-                                                                        'percentage' ? (
-                                                                            <span className="flex items-center gap-1">
-                                                                                <Percent className="h-3 w-3" />
-                                                                                {
-                                                                                    promo.discount_value
-                                                                                }
-                                                                                %
-                                                                            </span>
-                                                                        ) : (
-                                                                            <span className="flex items-center gap-1">
-                                                                                <DollarSign className="h-3 w-3" />
-
-                                                                                $
-                                                                                {promo.discount_value.toFixed(
-                                                                                    2,
-                                                                                )}
-                                                                            </span>
-                                                                        )}
-                                                                    </span>
-                                                                </div>
-                                                                {promo.description && (
-                                                                    <p className="text-xs text-muted-foreground">
-                                                                        {
-                                                                            promo.description
-                                                                        }
-                                                                    </p>
-                                                                )}
-                                                                <div className="mt-2 flex items-center gap-1">
-                                                                    <Calendar className="h-3 w-3 text-muted-foreground" />
-                                                                    <span className="text-xs text-muted-foreground">
-                                                                        {Math.floor(
-                                                                            promo.days_remaining,
-                                                                        )}{' '}
-                                                                        days
-                                                                        remaining
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-3 flex items-center gap-2 border-t pt-3">
-                                                            <code className="flex-1 rounded-lg bg-gray-100 px-3 py-2 text-center font-mono text-sm">
-                                                                {
-                                                                    promo.promo_code
-                                                                }
-                                                            </code>
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleCopyCode(
-                                                                        promo.promo_code,
-                                                                    )
-                                                                }
-                                                                className="rounded-lg p-2 hover:bg-gray-100"
-                                                                title="Copy code"
-                                                            >
-                                                                <Copy className="h-4 w-4" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                <button
-                                                    onClick={() =>
-                                                        setShowPromotions(false)
-                                                    }
-                                                    className="w-full py-2 text-xs text-primary hover:underline"
-                                                >
-                                                    Click any code to copy •
-                                                    Close to dismiss
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
-                        {/* Row 2 - Invoices + Coming Soon + Coming Soon */}
-                        <div className="grid gap-10 md:grid-cols-3">
-                            {/* Invoices Card */}
-                            <Link
-                                href="/invoices"
-                                className="group flex h-56 w-72 cursor-pointer flex-col items-center justify-center rounded-3xl border border-white/50 bg-white/90 p-8 text-center shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:bg-white/10"
-                            >
-                                <div className="transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-110">
-                                    <FileText className="mb-4 h-14 w-14 text-primary" />
-                                </div>
-                                <p className="text-xl font-medium transition-colors duration-300 group-hover:text-primary/80">
-                                    Invoices
-                                </p>
-                                <div className="mt-4 translate-y-4 transform opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                                    <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        View invoices
-                                        <svg
-                                            className="h-4 w-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M9 5l7 7-7 7"
-                                            />
-                                        </svg>
-                                    </span>
-                                </div>
-                            </Link>
-
-                            {/* Desktop Feedback Card */}
-                            <Link
-                                href="/retailer/feedback"
-                                className="group flex h-56 w-72 cursor-pointer flex-col items-center justify-center rounded-3xl border border-white/50 bg-white/90 p-8 text-center shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:bg-white/10"
-                            >
-                                <div className="transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-110">
-                                    <MessageSquare className="mb-4 h-14 w-14 text-primary" />
-                                </div>
-                                <p className="text-xl font-medium transition-colors duration-300 group-hover:text-primary/80">
-                                    Feedback
-                                </p>
-                                <div className="mt-4 translate-y-4 transform opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                                    <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        Click to view
-                                        <svg
-                                            className="h-4 w-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M9 5l7 7-7 7"
-                                            />
-                                        </svg>
-                                    </span>
-                                </div>
-                            </Link>
-
-                            {/* Second Coming Soon (remain unchanged) */}
-                            <div className="flex h-56 w-72 flex-col items-center justify-center rounded-3xl border border-white/50 bg-white/90 p-8 text-center opacity-50 shadow-2xl backdrop-blur-sm dark:bg-white/10">
-                                <p className="text-xl font-medium text-muted-foreground">
-                                    Coming Soon
-                                </p>
+                        {/* Invoices Card */}
+                        <Link
+                            href="/invoices"
+                            className="group flex h-56 w-72 cursor-pointer flex-col items-center justify-center rounded-3xl border border-white/50 bg-white/90 p-8 text-center shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:bg-white/10"
+                        >
+                            <div className="transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-110">
+                                <FileText className="mb-4 h-14 w-14 text-primary" />
                             </div>
-                        </div>
+                            <p className="text-xl font-medium transition-colors duration-300 group-hover:text-primary/80">
+                                Invoices
+                            </p>
+                            <div className="mt-4 translate-y-4 transform opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                                <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    View invoices
+                                    <svg
+                                        className="h-4 w-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M9 5l7 7-7 7"
+                                        />
+                                    </svg>
+                                </span>
+                            </div>
+                        </Link>
+
+                        {/* Desktop Feedback Card */}
+                        <Link
+                            href="/retailer/feedback"
+                            className="group flex h-56 w-72 cursor-pointer flex-col items-center justify-center rounded-3xl border border-white/50 bg-white/90 p-8 text-center shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:bg-white/10"
+                        >
+                            <div className="transform transition-transform duration-300 group-hover:-translate-y-2 group-hover:scale-110">
+                                <MessageSquare className="mb-4 h-14 w-14 text-primary" />
+                            </div>
+                            <p className="text-xl font-medium transition-colors duration-300 group-hover:text-primary/80">
+                                Feedback
+                            </p>
+                            <div className="mt-4 translate-y-4 transform opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                                <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    Click to view
+                                    <svg
+                                        className="h-4 w-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M9 5l7 7-7 7"
+                                        />
+                                    </svg>
+                                </span>
+                            </div>
+                        </Link>
                     </div>
                 </div>
             </div>
+        </div>
         </GuestLayout>
     );
 }
